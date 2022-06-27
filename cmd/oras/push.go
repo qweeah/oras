@@ -45,6 +45,7 @@ type pushOptions struct {
 	pathValidationDisabled bool
 	manifestAnnotations    string
 	manifestConfigRef      string
+	manifestExport         string
 }
 
 func pushCmd() *cobra.Command {
@@ -85,6 +86,7 @@ Example - Push file to the HTTP registry:
 
 	cmd.Flags().StringVarP(&opts.manifestAnnotations, "manifest-annotations", "", "", "manifest annotation file")
 	cmd.Flags().BoolVarP(&opts.pathValidationDisabled, "disable-path-validation", "", false, "skip path validation")
+	cmd.Flags().StringVarP(&opts.manifestExport, "export-manifest", "", "", "export the pushed manifest")
 	cmd.Flags().StringVarP(&opts.manifestConfigRef, "manifest-config", "", "", "manifest config file")
 
 	option.ApplyFlags(&opts, cmd.Flags())
@@ -127,21 +129,34 @@ func runPush(opts pushOptions) error {
 	copyOptions.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
 		return display.Print("Exists   ", display.ShortDigest(desc), desc.Annotations[ocispec.AnnotationTitle])
 	}
-	desc, err := packManifest(ctx, store, annotations, &opts)
+	manifestDesc, err := packManifest(ctx, store, annotations, &opts)
 	if err != nil {
 		return err
 	}
 	if tag := dst.Reference.Reference; tag == "" {
-		err = oras.CopyGraph(ctx, store, dst, desc, copyOptions.CopyGraphOptions)
+		err = oras.CopyGraph(ctx, store, dst, manifestDesc, copyOptions.CopyGraphOptions)
 	} else {
-		desc, err = oras.Copy(ctx, store, tagStaged, dst, tag, copyOptions)
+		_, err = oras.Copy(ctx, store, tagStaged, dst, tag, copyOptions)
 	}
 	if err != nil {
 		return err
 	}
+	// export manifest
+	if opts.manifestExport != "" {
+		manifestStore := file.New(filepath.Dir(opts.manifestExport))
+		defer manifestStore.Close()
+		store.AllowPathTraversalOnWrite = opts.pathValidationDisabled
+		if manifestDesc.Annotations == nil {
+			manifestDesc.Annotations = make(map[string]string)
+		}
+		manifestDesc.Annotations[ocispec.AnnotationTitle] = filepath.Base(opts.manifestExport)
+		if err = oras.CopyGraph(ctx, store, manifestStore, manifestDesc, oras.DefaultCopyGraphOptions); err != nil {
+			return err
+		}
+	}
 
 	fmt.Println("Pushed", opts.targetRef)
-	fmt.Println("Digest:", desc.Digest)
+	fmt.Println("Digest:", manifestDesc.Digest)
 
 	return nil
 }
