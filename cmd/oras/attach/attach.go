@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package attach
 
 import (
 	"context"
@@ -26,9 +26,10 @@ import (
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
-	"oras.land/oras-go/v2/content/file"
+	fileStore "oras.land/oras-go/v2/content/file"
 	"oras.land/oras/cmd/oras/internal/display"
 	oerrors "oras.land/oras/cmd/oras/internal/errors"
+	"oras.land/oras/cmd/oras/internal/file"
 	"oras.land/oras/cmd/oras/internal/option"
 )
 
@@ -41,7 +42,7 @@ type attachOptions struct {
 	artifactType string
 }
 
-func attachCmd() *cobra.Command {
+func Cmd() *cobra.Command {
 	var opts attachOptions
 	cmd := &cobra.Command{
 		Use:   "attach name<:tag|@digest> file[:type] [file...]",
@@ -86,7 +87,7 @@ func runAttach(opts attachOptions) error {
 	}
 
 	// Prepare manifest
-	store := file.New("")
+	store := fileStore.New("")
 	defer store.Close()
 	store.AllowPathTraversalOnWrite = opts.PathValidationDisabled
 
@@ -102,7 +103,7 @@ func runAttach(opts attachOptions) error {
 		return err
 	}
 	subject := ociToArtifact(ociSubject)
-	ociDescs, err := loadFiles(ctx, store, annotations, opts.FileRefs, opts.Verbose)
+	ociDescs, err := file.LoadFiles(ctx, store, annotations, opts.FileRefs, opts.Verbose)
 	if err != nil {
 		return err
 	}

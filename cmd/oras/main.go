@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"oras.land/oras/cmd/oras/attach"
 	"oras.land/oras/cmd/oras/manifest"
 )
 
@@ -20,7 +21,7 @@ func main() {
 		versionCmd(),
 		discoverCmd(),
 		copyCmd(),
-		attachCmd(),
+		attach.Cmd(),
 		manifest.Cmd(),
 	)
 	if err := cmd.Execute(); err != nil {
