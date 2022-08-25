@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package push
 
 import (
 	"context"
@@ -24,8 +24,9 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2"
-	"oras.land/oras-go/v2/content/file"
+	ofile "oras.land/oras-go/v2/content/file"
 	"oras.land/oras/cmd/oras/internal/display"
+	"oras.land/oras/cmd/oras/internal/file"
 	"oras.land/oras/cmd/oras/internal/option"
 )
 
@@ -43,7 +44,7 @@ type pushOptions struct {
 	artifactType      string
 }
 
-func pushCmd() *cobra.Command {
+func Cmd() *cobra.Command {
 	var opts pushOptions
 	cmd := &cobra.Command{
 		Use:   "push name[:tag|@digest] file[:type] [file...]",
@@ -106,7 +107,7 @@ func runPush(opts pushOptions) error {
 	}
 
 	// Prepare manifest
-	store := file.New("")
+	store := ofile.New("")
 	defer store.Close()
 	store.AllowPathTraversalOnWrite = opts.PathValidationDisabled
 
@@ -151,7 +152,7 @@ func runPush(opts pushOptions) error {
 	return opts.ExportManifest(ctx, store, desc)
 }
 
-func packManifest(ctx context.Context, store *file.Store, annotations map[string]map[string]string, opts *pushOptions) (ocispec.Descriptor, error) {
+func packManifest(ctx context.Context, store *ofile.Store, annotations map[string]map[string]string, opts *pushOptions) (ocispec.Descriptor, error) {
 	var packOpts oras.PackOptions
 	packOpts.ConfigAnnotations = annotations[option.AnnotationConfig]
 	packOpts.ManifestAnnotations = annotations[option.AnnotationManifest]
@@ -160,7 +161,7 @@ func packManifest(ctx context.Context, store *file.Store, annotations map[string
 		packOpts.ConfigMediaType = opts.artifactType
 	}
 	if opts.manifestConfigRef != "" {
-		path, mediatype := parseFileReference(opts.manifestConfigRef, oras.MediaTypeUnknownConfig)
+		path, mediatype := file.ParseFileReference(opts.manifestConfigRef, oras.MediaTypeUnknownConfig)
 		desc, err := store.Add(ctx, option.AnnotationConfig, mediatype, path)
 		if err != nil {
 			return ocispec.Descriptor{}, err
@@ -168,7 +169,7 @@ func packManifest(ctx context.Context, store *file.Store, annotations map[string
 		desc.Annotations = packOpts.ConfigAnnotations
 		packOpts.ConfigDescriptor = &desc
 	}
-	descs, err := loadFiles(ctx, store, annotations, opts.FileRefs, opts.Verbose)
+	descs, err := file.LoadFiles(ctx, store, annotations, opts.FileRefs, opts.Verbose)
 	if err != nil {
 		return ocispec.Descriptor{}, err
 	}

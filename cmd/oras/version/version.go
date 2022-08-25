@@ -1,4 +1,4 @@
-package main
+package version
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"oras.land/oras/internal/version"
 )
 
-func versionCmd() *cobra.Command {
+func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Show the oras version information",

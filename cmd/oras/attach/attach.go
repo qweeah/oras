@@ -26,7 +26,7 @@ import (
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
-	fileStore "oras.land/oras-go/v2/content/file"
+	ofile "oras.land/oras-go/v2/content/file"
 	"oras.land/oras/cmd/oras/internal/display"
 	oerrors "oras.land/oras/cmd/oras/internal/errors"
 	"oras.land/oras/cmd/oras/internal/file"
@@ -87,7 +87,7 @@ func runAttach(opts attachOptions) error {
 	}
 
 	// Prepare manifest
-	store := fileStore.New("")
+	store := ofile.New("")
 	defer store.Close()
 	store.AllowPathTraversalOnWrite = opts.PathValidationDisabled
 

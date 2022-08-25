@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package pull
 
 import (
 	"context"
@@ -25,10 +25,11 @@ import (
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
-	"oras.land/oras-go/v2/content/file"
+	ofile "oras.land/oras-go/v2/content/file"
 	"oras.land/oras-go/v2/content/oci"
 	"oras.land/oras/cmd/oras/internal/display"
 	"oras.land/oras/cmd/oras/internal/errors"
+	"oras.land/oras/cmd/oras/internal/file"
 	"oras.land/oras/cmd/oras/internal/option"
 	"oras.land/oras/internal/cache"
 	"oras.land/oras/internal/docker"
@@ -46,7 +47,7 @@ type pullOptions struct {
 	ManifestConfigRef string
 }
 
-func pullCmd() *cobra.Command {
+func Cmd() *cobra.Command {
 	var opts pullOptions
 	cmd := &cobra.Command{
 		Use:   "pull <name:tag|name@digest>",
@@ -105,7 +106,7 @@ func runPull(opts pullOptions) error {
 
 	// Copy Options
 	copyOptions := oras.DefaultCopyOptions
-	configPath, configMediaType := parseFileReference(opts.ManifestConfigRef, "")
+	configPath, configMediaType := file.ParseFileReference(opts.ManifestConfigRef, "")
 	copyOptions.FindSuccessors = func(ctx context.Context, fetcher content.Fetcher, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
 		successors, err := content.Successors(ctx, fetcher, desc)
 		if err != nil {
@@ -165,7 +166,7 @@ func runPull(opts pullOptions) error {
 	}
 
 	ctx, _ := opts.SetLoggerLevel()
-	var dst = file.New(opts.Output)
+	var dst = ofile.New(opts.Output)
 	dst.AllowPathTraversalOnWrite = opts.PathTraversal
 	dst.DisableOverwrite = opts.KeepOldFiles
 

@@ -20,9 +20,9 @@ import (
 	"unicode"
 )
 
-// parseFileReference parses file reference on windows.
+// ParseFileReference parses file reference on windows.
 // Windows systems does not allow ':' in the file path except for drive letter.
-func parseFileReference(reference string, mediaType string) (filePath, mediatype string) {
+func ParseFileReference(reference string, mediaType string) (filePath, mediatype string) {
 	i := strings.Index(reference, ":")
 	if i < 0 {
 		return reference, mediaType

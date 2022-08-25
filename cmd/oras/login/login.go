@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package login
 
 import (
 	"bufio"
@@ -34,7 +34,7 @@ type loginOptions struct {
 	Hostname string
 }
 
-func loginCmd() *cobra.Command {
+func Cmd() *cobra.Command {
 	var opts loginOptions
 	cmd := &cobra.Command{
 		Use:   "login registry",

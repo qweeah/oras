@@ -12,7 +12,7 @@ import (
 func LoadFiles(ctx context.Context, store *file.Store, annotations map[string]map[string]string, fileRefs []string, verbose bool) ([]ocispec.Descriptor, error) {
 	var files []ocispec.Descriptor
 	for _, fileRef := range fileRefs {
-		filename, mediaType := parseFileReference(fileRef, "")
+		filename, mediaType := ParseFileReference(fileRef, "")
 		name := filepath.Clean(filename)
 		if !filepath.IsAbs(name) {
 			// convert to slash-separated path unless it is absolute path

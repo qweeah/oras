@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package copy
 
 import (
 	"context"
@@ -38,7 +38,7 @@ type copyOptions struct {
 	dstRef string
 }
 
-func copyCmd() *cobra.Command {
+func Cmd() *cobra.Command {
 	var opts copyOptions
 	cmd := &cobra.Command{
 		Use:     "copy <from-ref> <to-ref>",

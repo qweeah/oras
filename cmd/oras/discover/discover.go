@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package discover
 
 import (
 	"context"
@@ -42,7 +42,7 @@ type discoverOptions struct {
 	outputType   string
 }
 
-func discoverCmd() *cobra.Command {
+func Cmd() *cobra.Command {
 	var opts discoverOptions
 	cmd := &cobra.Command{
 		Use:   "discover [options] <name:tag|name@digest>",
