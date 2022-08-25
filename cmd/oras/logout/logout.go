@@ -16,6 +16,8 @@ limitations under the License.
 package logout
 
 import (
+	"fmt"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"oras.land/oras/internal/credential"
@@ -60,5 +62,10 @@ func runLogout(opts logoutOptions) error {
 		return err
 	}
 
-	return store.Erase(opts.hostname)
+	if err := store.Erase(opts.hostname); err != nil {
+		return err
+	}
+
+	fmt.Println("Logged Succeeded")
+	return nil
 }
