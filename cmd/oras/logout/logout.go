@@ -66,6 +66,6 @@ func runLogout(opts logoutOptions) error {
 		return err
 	}
 
-	fmt.Println("Logged Succeeded")
+	fmt.Println("Logout Succeeded")
 	return nil
 }
