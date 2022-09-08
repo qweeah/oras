@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package scenario
+package command
 
 import (
 	"strings"
@@ -21,32 +21,27 @@ import (
 	"oras.land/oras/test/e2e/utils/match"
 )
 
-const (
-	USERNAME = "hello"
-	PASSWORD = "oras-test"
-)
-
-var _ = Context("ORAS user", Ordered, func() {
-	Describe("auth", func() {
+var _ = Describe("ORAS user", Ordered, func() {
+	Context("auth", func() {
 		info := "Login Succeeded\n"
 		When("using basic auth", func() {
 			utils.Exec(match.NewOption(nil, match.NewContent(&info), match.Keywords([]string{"WARNING", "Using --password via the CLI is insecure", "Use --password-stdin"}), false),
 				"should succeed with username&password flags",
-				"login", utils.Host, "-u", USERNAME, "-p", PASSWORD)
+				"login", utils.Host, "-u", utils.USERNAME, "-p", utils.PASSWORD)
 
-			utils.Exec(match.NewOption(strings.NewReader(PASSWORD), match.NewContent(&info), nil, false),
+			utils.Exec(match.NewOption(strings.NewReader(utils.PASSWORD), match.NewContent(&info), nil, false),
 				"should succeed with username flag and password from stdin",
-				"login", utils.Host, "-u", USERNAME, "--password-stdin")
+				"login", utils.Host, "-u", utils.USERNAME, "--password-stdin")
 		})
 	})
 
-	Describe("logs out", func() {
+	Context("logs out", func() {
 		When("using logout command", func() {
 			utils.Exec(&match.Success, "should logout", "logout", utils.Host)
 		})
 	})
 
-	Describe("runs commands without login", func() {
+	Context("runs commands without login", func() {
 		whenRunWithoutLogin("attach", utils.Host+"/repo:tag", "-a", "test=true", "--artifact-type", "doc/example")
 		whenRunWithoutLogin("copy", utils.Host+"/repo:from", utils.Host+"/repo:to")
 		whenRunWithoutLogin("discover", utils.Host+"/repo:tag")

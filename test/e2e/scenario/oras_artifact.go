@@ -35,22 +35,22 @@ var (
 	emptyConfig = "application/vnd.unknown.config.v1+json"
 )
 
-var _ = Context("ORAS user", Ordered, func() {
+var _ = Describe("ORAS user", Ordered, func() {
 	if err := utils.CopyTestData(files, temp_path); err != nil {
 		panic(err)
 	}
 
 	repo := "oras-artifact"
-	Describe("logs in", func() {
+	Context("logs in", func() {
 		When("using basic auth", func() {
 			info := "Login Succeeded\n"
-			utils.Exec(match.NewOption(strings.NewReader(PASSWORD), match.NewContent(&info), nil, false),
+			utils.Exec(match.NewOption(strings.NewReader(utils.PASSWORD), match.NewContent(&info), nil, false),
 				"should succeed with username flag and password from stdin",
-				"login", utils.Host, "-u", USERNAME, "--password-stdin")
+				"login", utils.Host, "-u", utils.USERNAME, "--password-stdin")
 		})
 	})
 
-	Describe("pushes images and check", Ordered, func() {
+	Context("pushes images and check", Ordered, func() {
 		tag := "image"
 		When("pushing an image", Ordered, func() {
 			manifestPath := filepath.Join(temp_path, "packed.json")
