@@ -32,7 +32,8 @@ import (
 )
 
 const (
-	tagStaged = "staged"
+	tagStagedImage    = "stagedImage"
+	tagStagedArtifact = "stagedArtifact"
 )
 
 type pushOptions struct {
@@ -106,8 +107,8 @@ Example - Push file "hi.txt" with multiple tags and concurrency level tuned:
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.manifestConfigRef, "config", "", "", "manifest config file")
-	cmd.Flags().StringVarP(&opts.artifactType, "artifact-type", "", "", "media type of the manifest config")
+	cmd.Flags().StringVarP(&opts.manifestConfigRef, "config", "", "", "`path` of image config file")
+	cmd.Flags().StringVarP(&opts.artifactType, "artifact-type", "", "", "artifact type")
 	cmd.Flags().Int64VarP(&opts.concurrency, "concurrency", "", 5, "concurrency level")
 
 	option.ApplyFlags(&opts, cmd.Flags())
@@ -130,10 +131,15 @@ func runPush(opts pushOptions) error {
 	committed := &sync.Map{}
 	copyOptions := oras.DefaultCopyOptions
 	copyOptions.Concurrency = opts.concurrency
-	copyOptions.PreCopy = display.StatusPrinter("Uploading", opts.Verbose)
-	copyOptions.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
+	copyOptions.PreCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
 		committed.Store(desc.Digest.String(), desc.Annotations[ocispec.AnnotationTitle])
-		return display.PrintStatus(desc, "Exists   ", opts.Verbose)
+		return display.PrintStatus(desc, "Uploading", opts.Verbose)
+	}
+	copyOptions.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
+		if _, printed := committed.LoadOrStore(desc.Digest.String(), desc.Annotations[ocispec.AnnotationTitle]); !printed {
+			return display.PrintStatus(desc, "Exists   ", opts.Verbose)
+		}
+		return nil
 	}
 	copyOptions.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
 		committed.Store(desc.Digest.String(), desc.Annotations[ocispec.AnnotationTitle])
@@ -155,12 +161,8 @@ func runPush(opts pushOptions) error {
 	if tag := dst.Reference.Reference; tag == "" {
 		err = oras.CopyGraph(ctx, store, dst, desc, copyOptions.CopyGraphOptions)
 	} else {
-		desc, err = oras.Copy(ctx, store, tagStaged, dst, tag, copyOptions)
+		desc, err = oras.Copy(ctx, store, tagStagedArtifact, dst, tag, copyOptions)
 	}
-	if err != nil {
-		return err
-	}
-
 	fmt.Println("Pushed", opts.targetRef)
 
 	if len(opts.extraRefs) != 0 {
@@ -183,12 +185,9 @@ func runPush(opts pushOptions) error {
 
 func packManifest(ctx context.Context, store *file.Store, annotations map[string]map[string]string, opts *pushOptions) (ocispec.Descriptor, error) {
 	var packOpts oras.PackOptions
-	packOpts.ConfigAnnotations = annotations[option.AnnotationConfig]
 	packOpts.ManifestAnnotations = annotations[option.AnnotationManifest]
 
-	if opts.artifactType != "" {
-		packOpts.ConfigMediaType = opts.artifactType
-	}
+	packOpts.ConfigAnnotations = annotations[option.AnnotationConfig]
 	if opts.manifestConfigRef != "" {
 		path, mediatype := parseFileReference(opts.manifestConfigRef, oras.MediaTypeUnknownConfig)
 		desc, err := store.Add(ctx, option.AnnotationConfig, mediatype, path)
@@ -196,17 +195,22 @@ func packManifest(ctx context.Context, store *file.Store, annotations map[string
 			return ocispec.Descriptor{}, err
 		}
 		desc.Annotations = packOpts.ConfigAnnotations
+
 		packOpts.ConfigDescriptor = &desc
+		opts.artifactType = mediatype
 	}
 	descs, err := loadFiles(ctx, store, annotations, opts.FileRefs, opts.Verbose)
 	if err != nil {
 		return ocispec.Descriptor{}, err
 	}
-	manifestDesc, err := oras.Pack(ctx, store, descs, packOpts)
+
+	// pack artifact
+	packOpts.PackImageManifest = false
+	manifestDesc, err := oras.Pack(ctx, store, opts.artifactType, descs, packOpts)
 	if err != nil {
 		return ocispec.Descriptor{}, err
 	}
-	if err := store.Tag(ctx, manifestDesc, tagStaged); err != nil {
+	if err := store.Tag(ctx, manifestDesc, tagStagedArtifact); err != nil {
 		return ocispec.Descriptor{}, err
 	}
 	return manifestDesc, nil

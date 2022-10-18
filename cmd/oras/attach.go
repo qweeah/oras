@@ -27,6 +27,7 @@ import (
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/content/file"
+	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras/cmd/oras/internal/display"
 	oerrors "oras.land/oras/cmd/oras/internal/errors"
 	"oras.land/oras/cmd/oras/internal/option"
@@ -106,25 +107,20 @@ func runAttach(opts attachOptions) error {
 	if dst.Reference.Reference == "" {
 		return oerrors.NewErrInvalidReference(dst.Reference)
 	}
-	ociSubject, err := dst.Resolve(ctx, dst.Reference.Reference)
+	subject, err := dst.Resolve(ctx, dst.Reference.Reference)
 	if err != nil {
 		return err
 	}
-	subject := ociToArtifact(ociSubject)
 	ociDescs, err := loadFiles(ctx, store, annotations, opts.FileRefs, opts.Verbose)
 	if err != nil {
 		return err
 	}
-	orasDescs := make([]artifactspec.Descriptor, len(ociDescs))
-	for i := range ociDescs {
-		orasDescs[i] = ociToArtifact(ociDescs[i])
+	po := oras.PackOptions{
+		PackImageManifest:   false,
+		Subject:             &subject,
+		ManifestAnnotations: annotations[option.AnnotationManifest],
 	}
-	desc, err := oras.PackArtifact(
-		ctx, store, opts.artifactType, orasDescs,
-		oras.PackArtifactOptions{
-			Subject:             &subject,
-			ManifestAnnotations: annotations[option.AnnotationManifest],
-		})
+	root, err := oras.Pack(ctx, store, opts.artifactType, ociDescs, po)
 	if err != nil {
 		return err
 	}
@@ -134,17 +130,22 @@ func runAttach(opts attachOptions) error {
 	graphCopyOptions := oras.DefaultCopyGraphOptions
 	graphCopyOptions.Concurrency = opts.concurrency
 	graphCopyOptions.FindSuccessors = func(ctx context.Context, fetcher content.Fetcher, node ocispec.Descriptor) ([]ocispec.Descriptor, error) {
-		if isEqualOCIDescriptor(node, desc) {
-			// Skip subject
+		if isEqualOCIDescriptor(node, root) {
 			return ociDescs, nil
 		}
 		return content.Successors(ctx, fetcher, node)
 	}
-	graphCopyOptions.PreCopy = display.StatusPrinter("Uploading", opts.Verbose)
-	graphCopyOptions.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
+	graphCopyOptions.PreCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
 		committed.Store(desc.Digest.String(), desc.Annotations[ocispec.AnnotationTitle])
-		return display.PrintStatus(desc, "Exists   ", opts.Verbose)
+		return display.PrintStatus(desc, "Uploading", opts.Verbose)
 	}
+	graphCopyOptions.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
+		if _, printed := committed.LoadOrStore(desc.Digest.String(), desc.Annotations[ocispec.AnnotationTitle]); !printed {
+			return display.PrintStatus(desc, "Exists   ", opts.Verbose)
+		}
+		return nil
+	}
+
 	graphCopyOptions.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
 		committed.Store(desc.Digest.String(), desc.Annotations[ocispec.AnnotationTitle])
 		if err := display.PrintSuccessorStatus(ctx, desc, "Skipped  ", store, committed, opts.Verbose); err != nil {
@@ -153,16 +154,24 @@ func runAttach(opts attachOptions) error {
 		return display.PrintStatus(desc, "Uploaded ", opts.Verbose)
 	}
 	// Push
-	err = oras.CopyGraph(ctx, store, dst, desc, graphCopyOptions)
+	err = oras.CopyGraph(ctx, store, dst, root, graphCopyOptions)
+	if err == remote.ErrUnsupportedArtifactManifest {
+		po.PackImageManifest = true
+		root, err = oras.Pack(ctx, store, opts.artifactType, ociDescs, po)
+		if err != nil {
+			return err
+		}
+		err = oras.CopyGraph(ctx, store, dst, root, graphCopyOptions)
+	}
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("Attached to", opts.targetRef)
-	fmt.Println("Digest:", desc.Digest)
+	fmt.Println("Digest:", root.Digest)
 
 	// Export manifest
-	return opts.ExportManifest(ctx, store, desc)
+	return opts.ExportManifest(ctx, store, root)
 }
 
 func isEqualOCIDescriptor(a, b ocispec.Descriptor) bool {
