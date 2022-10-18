@@ -2,8 +2,6 @@ module oras.land/oras
 
 go 1.19
 
-replace oras.land/oras-go/v2 v2.0.0 => github.com/Wwwsylvia/oras-go/v2 v2.0.0-20221018081626-70e037750247
-
 require (
 	github.com/docker/cli v20.10.19+incompatible
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
@@ -14,7 +12,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.6.0
 	github.com/spf13/pflag v1.0.5
-	oras.land/oras-go/v2 v2.0.0
+	oras.land/oras-go/v2 v2.0.0-rc.3.0.20221018111647-1969551cc3c7
 )
 
 require (
