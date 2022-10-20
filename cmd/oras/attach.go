@@ -16,12 +16,15 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/content/file"
 	"oras.land/oras/cmd/oras/internal/display"
 	oerrors "oras.land/oras/cmd/oras/internal/errors"
@@ -111,6 +114,7 @@ func runAttach(opts attachOptions) error {
 	if err != nil {
 		return err
 	}
+	var committed sync.Map
 	packOpts := oras.PackOptions{
 		Subject:             &subject,
 		ManifestAnnotations: annotations[option.AnnotationManifest],
@@ -119,7 +123,23 @@ func runAttach(opts attachOptions) error {
 		return oras.Pack(ctx, store, opts.artifactType, blobs, po)
 	})
 	copyFunc := oci.CopyFunc(func(root ocispec.Descriptor) error {
-		o := display.SetupUploadPrinter(store, opts.concurrency, opts.Verbose, blobs)
+		o := display.UploadCopyOption(store, &committed, opts.concurrency, opts.Verbose, blobs)
+		o.FindSuccessors = func(ctx context.Context, fetcher content.Fetcher, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
+			// skip subject since it's not in the file store
+			successors, err := content.Successors(ctx, store, root)
+			if err != nil {
+				return nil, err
+			}
+			len := len(successors)
+			last := len - 1
+			for i := last; i >= 0; i-- {
+				if isEqualOCIDescriptor(successors[i], subject) {
+					successors[i] = successors[last]
+					return successors[:last], nil
+				}
+			}
+			return nil, fmt.Errorf("failed to find subject %v in the packed root %v", subject, root)
+		}
 		return oras.CopyGraph(ctx, store, dst, root, o)
 	})
 
@@ -134,4 +154,8 @@ func runAttach(opts attachOptions) error {
 
 	// Export manifest
 	return opts.ExportManifest(ctx, store, root)
+}
+
+func isEqualOCIDescriptor(a, b ocispec.Descriptor) bool {
+	return a.Size == b.Size && a.Digest == b.Digest && a.MediaType == b.MediaType
 }
