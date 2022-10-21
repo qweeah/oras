@@ -125,17 +125,20 @@ func runAttach(opts attachOptions) error {
 	copyFunc := oci.CopyFunc(func(root ocispec.Descriptor) error {
 		o := display.UploadCopyOption(store, &committed, opts.concurrency, opts.Verbose, blobs)
 		o.FindSuccessors = func(ctx context.Context, fetcher content.Fetcher, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
-			// skip subject since it's not in the file store
+			// skip subject to save one HEAD towards dst
+			if root.MediaType == ocispec.MediaTypeArtifactManifest {
+				return blobs, nil
+			}
 			successors, err := content.Successors(ctx, store, root)
 			if err != nil {
 				return nil, err
 			}
-			len := len(successors)
-			last := len - 1
-			for i := last; i >= 0; i-- {
-				if isEqualOCIDescriptor(successors[i], subject) {
-					successors[i] = successors[last]
-					return successors[:last], nil
+			j := len(successors) - 1
+			for i, s := range successors {
+				if isEqualOCIDescriptor(s, subject) {
+					// swap subject to end and slice it off
+					successors[i] = successors[j]
+					return successors[:j], nil
 				}
 			}
 			return nil, fmt.Errorf("failed to find subject %v in the packed root %v", subject, root)

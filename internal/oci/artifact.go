@@ -25,7 +25,7 @@ var ErrArtifactUnsupported error
 type PackFunc func(opts oras.PackOptions) (ocispec.Descriptor, error)
 type CopyFunc func(desc ocispec.Descriptor) error
 
-// PackAndCopy.
+// PackAndCopy packs an oci artifact and copies it with oci image fallback.
 func PackAndCopy(opts oras.PackOptions, pack PackFunc, copy CopyFunc) (ocispec.Descriptor, error) {
 	// try OCI artifact first
 	opts.PackImageManifest = false
