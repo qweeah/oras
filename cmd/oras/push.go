@@ -16,7 +16,6 @@ limitations under the License.
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -29,10 +28,7 @@ import (
 	"oras.land/oras-go/v2/content/file"
 	"oras.land/oras/cmd/oras/internal/display"
 	"oras.land/oras/cmd/oras/internal/option"
-)
-
-const (
-	tagStaged = "staged"
+	"oras.land/oras/internal/oci"
 )
 
 type pushOptions struct {
@@ -120,94 +116,78 @@ func runPush(opts pushOptions) error {
 		return err
 	}
 
-	// Prepare manifest
+	// prepare pack
+	packOpts := oras.PackOptions{
+		ConfigAnnotations:   annotations[option.AnnotationConfig],
+		ManifestAnnotations: annotations[option.AnnotationManifest],
+	}
 	store := file.New("")
 	defer store.Close()
 	store.AllowPathTraversalOnWrite = opts.PathValidationDisabled
 
-	// Ready to push
-	committed := &sync.Map{}
-	copyOptions := oras.DefaultCopyOptions
-	copyOptions.Concurrency = opts.concurrency
-	copyOptions.PreCopy = display.StatusPrinter("Uploading", opts.Verbose)
-	copyOptions.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
-		committed.Store(desc.Digest.String(), desc.Annotations[ocispec.AnnotationTitle])
-		return display.PrintStatus(desc, "Exists   ", opts.Verbose)
-	}
-	copyOptions.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
-		committed.Store(desc.Digest.String(), desc.Annotations[ocispec.AnnotationTitle])
-		if err := display.PrintSuccessorStatus(ctx, desc, "Skipped  ", store, committed, opts.Verbose); err != nil {
-			return err
-		}
-		return display.PrintStatus(desc, "Uploaded ", opts.Verbose)
-	}
-	desc, err := packManifest(ctx, store, annotations, &opts)
-	if err != nil {
-		return err
-	}
-
-	// Push
-	dst, err := opts.NewRepository(opts.targetRef, opts.Common)
-	if err != nil {
-		return err
-	}
-	if tag := dst.Reference.Reference; tag == "" {
-		err = oras.CopyGraph(ctx, store, dst, desc, copyOptions.CopyGraphOptions)
-	} else {
-		desc, err = oras.Copy(ctx, store, tagStaged, dst, tag, copyOptions)
-	}
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("Pushed", opts.targetRef)
-
-	if len(opts.extraRefs) != 0 {
-		contentBytes, err := content.FetchAll(ctx, store, desc)
-		if err != nil {
-			return err
-		}
-		tagBytesNOpts := oras.DefaultTagBytesNOptions
-		tagBytesNOpts.Concurrency = opts.concurrency
-		if _, err = oras.TagBytesN(ctx, &display.TagManifestStatusPrinter{Repository: dst}, desc.MediaType, contentBytes, opts.extraRefs, tagBytesNOpts); err != nil {
-			return err
-		}
-	}
-
-	fmt.Println("Digest:", desc.Digest)
-
-	// Export manifest
-	return opts.ExportManifest(ctx, store, desc)
-}
-
-func packManifest(ctx context.Context, store *file.Store, annotations map[string]map[string]string, opts *pushOptions) (ocispec.Descriptor, error) {
-	var packOpts oras.PackOptions
-	packOpts.ConfigAnnotations = annotations[option.AnnotationConfig]
-	packOpts.ManifestAnnotations = annotations[option.AnnotationManifest]
-
 	if opts.manifestConfigRef != "" {
-		path, mediatype := parseFileReference(opts.manifestConfigRef, oras.MediaTypeUnknownConfig)
-		desc, err := store.Add(ctx, option.AnnotationConfig, mediatype, path)
+		path, cfgMediaType := parseFileReference(opts.manifestConfigRef, oras.MediaTypeUnknownConfig)
+		desc, err := store.Add(ctx, option.AnnotationConfig, cfgMediaType, path)
 		if err != nil {
-			return ocispec.Descriptor{}, err
+			return err
 		}
 		desc.Annotations = packOpts.ConfigAnnotations
 		packOpts.ConfigDescriptor = &desc
 		packOpts.PackImageManifest = true
 	}
-	descs, err := loadFiles(ctx, store, annotations, opts.FileRefs, opts.Verbose)
+	blobs, err := loadFiles(ctx, store, annotations, opts.FileRefs, opts.Verbose)
 	if err != nil {
-		return ocispec.Descriptor{}, err
+		return err
+	}
+	packFunc := oci.PackFunc(func(po oras.PackOptions) (ocispec.Descriptor, error) {
+		root, err := oras.Pack(ctx, store, opts.artifactType, blobs, po)
+		if err != nil {
+			return ocispec.Descriptor{}, err
+		}
+		if err = store.Tag(ctx, root, root.Digest.String()); err != nil {
+			return ocispec.Descriptor{}, err
+		}
+		return root, nil
+	})
+
+	// prepare push
+	var committed sync.Map
+	dst, err := opts.NewRepository(opts.targetRef, opts.Common)
+	if err != nil {
+		return err
+	}
+	copyFunc := oci.CopyFunc(func(root ocispec.Descriptor) error {
+		o := display.UploadCopyOption(store, &committed, opts.concurrency, opts.Verbose, blobs)
+		if tag := dst.Reference.Reference; tag == "" {
+			err = oras.CopyGraph(ctx, store, dst, root, o)
+		} else {
+			_, err = oras.Copy(ctx, store, root.Digest.String(), dst, tag, oras.CopyOptions{CopyGraphOptions: o})
+		}
+		return err
+	})
+
+	// push
+	root, err := oci.PackAndCopy(packOpts, packFunc, copyFunc)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Pushed", opts.targetRef)
+
+	// tag
+	if len(opts.extraRefs) != 0 {
+		contentBytes, err := content.FetchAll(ctx, store, root)
+		if err != nil {
+			return err
+		}
+		tagBytesNOpts := oras.DefaultTagBytesNOptions
+		tagBytesNOpts.Concurrency = opts.concurrency
+		if _, err = oras.TagBytesN(ctx, &display.TagManifestStatusPrinter{Repository: dst}, root.MediaType, contentBytes, opts.extraRefs, tagBytesNOpts); err != nil {
+			return err
+		}
 	}
 
-	// pack artifact
-	manifestDesc, err := oras.Pack(ctx, store, opts.artifactType, descs, packOpts)
-	if err != nil {
-		return ocispec.Descriptor{}, err
-	}
+	fmt.Println("Digest:", root.Digest)
 
-	if err = store.Tag(ctx, manifestDesc, tagStaged); err != nil {
-		return ocispec.Descriptor{}, err
-	}
-	return manifestDesc, nil
+	// Export manifest
+	return opts.ExportManifest(ctx, store, root)
 }

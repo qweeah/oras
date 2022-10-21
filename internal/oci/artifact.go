@@ -35,7 +35,7 @@ func PackAndCopy(opts oras.PackOptions, pack PackFunc, copy CopyFunc) (ocispec.D
 	}
 
 	// if err = copy(root); errors.Is(err, ErrArtifactUnsupported) {
-	if err = copy(root); err != nil {
+	if err = copy(root); err != nil && !opts.PackImageManifest {
 		// fallback to OCI image
 		opts.PackImageManifest = true
 		root, err = pack(opts)
