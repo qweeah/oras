@@ -185,7 +185,6 @@ func runPush(opts pushOptions) error {
 			return err
 		}
 	}
-
 	fmt.Println("Digest:", root.Digest)
 
 	// Export manifest
