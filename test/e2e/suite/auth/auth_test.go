@@ -11,18 +11,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package scenario
 
-import "github.com/opencontainers/go-digest"
+import (
+	"fmt"
+	"testing"
 
-// Reference generates the reference string from given parameters.
-func Reference(registry string, repo string, tagOrDigest string) string {
-	ret := registry + "/" + repo
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
 
-	if err := digest.Digest(tagOrDigest).Validate(); err != nil {
-		ret += ":" + tagOrDigest
-	} else {
-		ret += "@" + tagOrDigest
-	}
-	return ret
+// TestORASAuth runs auth tests.
+// This suite has to be separated from other tests.
+func TestORASAuth(t *testing.T) {
+	RegisterFailHandler(Fail)
+
+	suiteConf, _ := GinkgoConfiguration()
+	fmt.Printf("Starting e2e on Ginkgo node %d of total %d\n",
+		suiteConf.ParallelProcess, suiteConf.ParallelTotal)
+	RunSpecs(t, "ORAS Scenario Suite")
 }
