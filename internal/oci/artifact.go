@@ -27,14 +27,12 @@ type CopyFunc func(desc ocispec.Descriptor) error
 
 // PackAndCopy packs an oci artifact and copies it with oci image fallback.
 func PackAndCopy(opts oras.PackOptions, pack PackFunc, copy CopyFunc) (ocispec.Descriptor, error) {
-	// try OCI artifact first
-	opts.PackImageManifest = false
 	root, err := pack(opts)
 	if err != nil {
 		return ocispec.Descriptor{}, err
 	}
 
-	// if err = copy(root); errors.Is(err, ErrArtifactUnsupported) {
+	// if err = copy(root); errors.Is(err, ErrArtifactUnsupported) && !opts.PackImageManifest {
 	if err = copy(root); err != nil && !opts.PackImageManifest {
 		// fallback to OCI image
 		opts.PackImageManifest = true
