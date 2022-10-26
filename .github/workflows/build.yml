@@ -66,7 +66,7 @@ jobs:
           echo "--------------- Testing oci image fallback ---------------"
           docker kill oras-e2e || true
           whoami
-          ls -al $mnt_root/docker
+          ls -al /home/runner/work/oras/oras/test/e2e/testdata/distribution/mount/docker/registry/v2/repositories/oci-image/_manifests/tags/image/current/link
           rm -rf $mnt_root/docker/registry
           for layer in $(ls $mnt_root/*.tar.gz); do
             tar -xvzf $layer -C $mnt_root
