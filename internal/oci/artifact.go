@@ -20,8 +20,6 @@ import (
 	"oras.land/oras-go/v2"
 )
 
-var ErrArtifactUnsupported error
-
 type PackFunc func(opts oras.PackOptions) (ocispec.Descriptor, error)
 type CopyFunc func(desc ocispec.Descriptor) error
 
@@ -32,8 +30,7 @@ func PackAndCopy(opts oras.PackOptions, pack PackFunc, copy CopyFunc) (ocispec.D
 		return ocispec.Descriptor{}, err
 	}
 
-	// if err = copy(root); errors.Is(err, ErrArtifactUnsupported) && !opts.PackImageManifest {
-	if err = copy(root); err != nil && !opts.PackImageManifest {
+	if err = copy(root); !opts.PackImageManifest && ociArtifactUnsupported(err) {
 		// fallback to OCI image
 		opts.PackImageManifest = true
 		root, err = pack(opts)
@@ -43,4 +40,9 @@ func PackAndCopy(opts oras.PackOptions, pack PackFunc, copy CopyFunc) (ocispec.D
 		err = copy(root)
 	}
 	return root, err
+}
+
+func ociArtifactUnsupported(err error) bool {
+	// TODO: pending for https://github.com/oras-project/oras-go/issues/344
+	return err != nil
 }
