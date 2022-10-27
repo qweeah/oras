@@ -151,13 +151,12 @@ func runPush(opts pushOptions) error {
 	})
 
 	// prepare push
-	var committed sync.Map
 	dst, err := opts.NewRepository(opts.targetRef, opts.Common)
 	if err != nil {
 		return err
 	}
 	copyFunc := oci.CopyFunc(func(root ocispec.Descriptor) error {
-		o := display.UploadCopyOption(store, &committed, opts.concurrency, opts.Verbose, blobs)
+		o := display.UploadCopyOption(store, &sync.Map{}, opts.concurrency, opts.Verbose, blobs)
 		if tag := dst.Reference.Reference; tag == "" {
 			err = oras.CopyGraph(ctx, store, dst, root, o)
 		} else {
