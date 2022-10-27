@@ -114,7 +114,6 @@ func runAttach(opts attachOptions) error {
 	if err != nil {
 		return err
 	}
-	var committed sync.Map
 	packOpts := oras.PackOptions{
 		Subject:             &subject,
 		ManifestAnnotations: annotations[option.AnnotationManifest],
@@ -123,7 +122,7 @@ func runAttach(opts attachOptions) error {
 		return oras.Pack(ctx, store, opts.artifactType, blobs, po)
 	})
 	copyFunc := oci.CopyFunc(func(root ocispec.Descriptor) error {
-		o := display.UploadCopyOption(store, &committed, opts.concurrency, opts.Verbose, blobs)
+		o := display.UploadCopyOption(store, &sync.Map{}, opts.concurrency, opts.Verbose, blobs)
 		o.FindSuccessors = func(ctx context.Context, fetcher content.Fetcher, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
 			// skip subject to save one HEAD towards dst
 			if root.MediaType == ocispec.MediaTypeArtifactManifest {
