@@ -155,8 +155,9 @@ func runPush(opts pushOptions) error {
 	if err != nil {
 		return err
 	}
+	var committed sync.Map
 	copyFunc := oci.CopyFunc(func(root ocispec.Descriptor) error {
-		o := display.UploadCopyOption(store, &sync.Map{}, opts.concurrency, opts.Verbose, blobs)
+		o := display.UploadOption(store, &committed, opts.concurrency, opts.Verbose, blobs)
 		if tag := dst.Reference.Reference; tag == "" {
 			err = oras.CopyGraph(ctx, store, dst, root, o)
 		} else {
@@ -166,13 +167,13 @@ func runPush(opts pushOptions) error {
 	})
 
 	// push
-	root, err := oci.PackAndCopy(packOpts, packFunc, copyFunc)
+	root, err := oci.Upload(packOpts, packFunc, copyFunc)
 	if err != nil {
 		return err
 	}
 	fmt.Println("Pushed", opts.targetRef)
 
-	// tag
+	// multi tagging
 	if len(opts.extraRefs) != 0 {
 		contentBytes, err := content.FetchAll(ctx, store, root)
 		if err != nil {

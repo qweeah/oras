@@ -23,8 +23,8 @@ import (
 type PackFunc func(opts oras.PackOptions) (ocispec.Descriptor, error)
 type CopyFunc func(desc ocispec.Descriptor) error
 
-// PackAndCopy packs an oci artifact and copies it with oci image fallback.
-func PackAndCopy(opts oras.PackOptions, pack PackFunc, copy CopyFunc) (ocispec.Descriptor, error) {
+// Upload packs an oci artifact and copies it with oci image fallback.
+func Upload(opts oras.PackOptions, pack PackFunc, copy CopyFunc) (ocispec.Descriptor, error) {
 	root, err := pack(opts)
 	if err != nil {
 		return ocispec.Descriptor{}, err
@@ -43,6 +43,6 @@ func PackAndCopy(opts oras.PackOptions, pack PackFunc, copy CopyFunc) (ocispec.D
 }
 
 func ociArtifactUnsupported(err error) bool {
-	// TODO: pending for https://github.com/oras-project/oras-go/issues/344
+	// TODO: 400 & MANIFEST_INVALID
 	return err != nil
 }

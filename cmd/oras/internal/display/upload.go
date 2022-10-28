@@ -24,8 +24,8 @@ import (
 	"oras.land/oras-go/v2/content"
 )
 
-// UploadCopyOption returns the copy graph option for upload-related commands.
-func UploadCopyOption(source content.Fetcher, committed *sync.Map, concurrency int64, verbose bool, blobs []ocispec.Descriptor) oras.CopyGraphOptions {
+// UploadOption returns the copy graph option for upload-related commands.
+func UploadOption(source content.Fetcher, committed *sync.Map, concurrency int64, verbose bool, blobs []ocispec.Descriptor) oras.CopyGraphOptions {
 	graphCopyOptions := oras.DefaultCopyGraphOptions
 	graphCopyOptions.Concurrency = concurrency
 	graphCopyOptions.PreCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
@@ -46,5 +46,22 @@ func UploadCopyOption(source content.Fetcher, committed *sync.Map, concurrency i
 		}
 		return PrintStatus(desc, "Uploaded ", verbose)
 	}
+
+	graphCopyOptions.FindSuccessors = func(ctx context.Context, fetcher content.Fetcher, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
+		successors, err := content.Successors(ctx, source, desc)
+		if err != nil {
+			return nil, err
+		}
+		start := 0
+		for i, s := range successors {
+			if _, done := committed.Load(s.Digest.String()); done {
+				// swap and slice committed node off
+				successors[i] = successors[start]
+				start++
+			}
+		}
+		return successors[start:], nil
+	}
+
 	return graphCopyOptions
 }
