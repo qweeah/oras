@@ -122,22 +122,24 @@ func runAttach(opts attachOptions) error {
 		return oras.Pack(ctx, store, opts.artifactType, blobs, po)
 	})
 	copyFunc := oci.CopyFunc(func(root ocispec.Descriptor) error {
-		o := display.UploadCopyOption(store, &sync.Map{}, opts.concurrency, opts.Verbose, blobs)
+		o := display.UploadOption(store, &sync.Map{}, opts.concurrency, opts.Verbose, blobs)
 		o.FindSuccessors = func(ctx context.Context, fetcher content.Fetcher, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
-			// skip subject to save one HEAD towards dst
-			if root.MediaType == ocispec.MediaTypeArtifactManifest {
-				return blobs, nil
-			}
-			successors, err := content.Successors(ctx, store, root)
+			successors, err := o.FindSuccessors(ctx, fetcher, desc)
 			if err != nil {
 				return nil, err
 			}
+			// skip subject to save one HEAD towards dst
+			if root.MediaType == ocispec.MediaTypeArtifactManifest ||
+				root.MediaType == ocispec.MediaTypeImageManifest {
+				return successors, nil
+			}
+
 			j := len(successors) - 1
 			for i, s := range successors {
 				if isEqualOCIDescriptor(s, subject) {
 					// swap subject to end and slice it off
 					successors[i] = successors[j]
-					return successors[:j], nil
+					return o.FindSuccessors(ctx, fetcher, desc)
 				}
 			}
 			return nil, fmt.Errorf("failed to find subject %v in the packed root %v", subject, root)
@@ -146,7 +148,7 @@ func runAttach(opts attachOptions) error {
 	})
 
 	// push
-	root, err := oci.PackAndCopy(packOpts, packFunc, copyFunc)
+	root, err := oci.Upload(packOpts, packFunc, copyFunc)
 	if err != nil {
 		return err
 	}
