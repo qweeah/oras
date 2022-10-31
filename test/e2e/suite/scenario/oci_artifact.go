@@ -74,7 +74,8 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 					WithDescription("download identical file " + f).Exec()
 			}
 
-			ORAS("attach", Reference(Host, repo, tag), "--artifact-type", "test-artifact", "-v", attachFile, "-v", "--export-manifest", manifestName).
+			ORAS("ls", "foobar", "-al").WithWorkDir(tempDir).Exec()
+			ORAS("attach", Reference(Host, repo, tag), "--artifact-type", "test-artifact", attachFile, "-v", "--export-manifest", manifestName).
 				MatchStatus(attachTexts, true, 1).
 				WithWorkDir(tempDir).
 				WithDescription("attach with manifest exported").Exec()
@@ -94,7 +95,7 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 					{Digest: "2c26b46b68ff", Name: attachFile},
 				}, true, 4).
 				WithWorkDir(tempDir).
-				WithDescription("pull artFiles with config").Exec()
+				WithDescription("pull attached artifact").Exec()
 			Binary("diff", filepath.Join(attachFile), filepath.Join(pullRoot, attachFile)).
 				WithWorkDir(tempDir).
 				WithDescription("download identical file " + attachFile).Exec()
