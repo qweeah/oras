@@ -78,7 +78,7 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 				WithWorkDir(tempDir).
 				WithDescription("attach with manifest exported").Exec()
 			session = ORAS("discover", Reference(Host, repo, tag), "-o", "json").Exec()
-			dgst := Binary("jq", "-r", ".referrers[].digest").
+			dgst := Binary("jq", "-r", ".manifests[].digest").
 				WithInput(session.Out).Exec().Out.Contents()
 
 			session = Binary("cat", manifestName).WithWorkDir(tempDir).Exec()
