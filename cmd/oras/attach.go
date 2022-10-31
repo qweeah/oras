@@ -140,7 +140,7 @@ func runAttach(opts attachOptions) error {
 				if isEqualOCIDescriptor(s, subject) {
 					// swap subject to end and slice it off
 					successors[i] = successors[j]
-					return o.FindSuccessors(ctx, fetcher, desc)
+					return successors[:j], nil
 				}
 			}
 			return nil, fmt.Errorf("failed to find subject %v in the packed root %v", subject, root)
