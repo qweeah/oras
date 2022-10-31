@@ -123,8 +123,9 @@ func runAttach(opts attachOptions) error {
 	})
 	copyFunc := oci.CopyFunc(func(root ocispec.Descriptor) error {
 		o := display.UploadOption(store, &sync.Map{}, opts.concurrency, opts.Verbose, blobs)
+		findSuccessors := o.FindSuccessors
 		o.FindSuccessors = func(ctx context.Context, fetcher content.Fetcher, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
-			successors, err := o.FindSuccessors(ctx, fetcher, desc)
+			successors, err := findSuccessors(ctx, fetcher, desc)
 			if err != nil {
 				return nil, err
 			}
