@@ -22,18 +22,19 @@ import (
 )
 
 var (
-	artFiles = []string{
+	pushFiles = []string{
 		"foobar/foo1",
 		"foobar/foo2",
 		"foobar/bar",
 	}
 	artifactPushTexts = []match.StateKey{
-		{Digest: "2c26b46b68ff", Name: artFiles[0]},
-		{Digest: "2c26b46b68ff", Name: artFiles[1]},
-		{Digest: "fcde2b2edba5", Name: artFiles[2]},
+		{Digest: "2c26b46b68ff", Name: pushFiles[0]},
+		{Digest: "2c26b46b68ff", Name: pushFiles[1]},
+		{Digest: "fcde2b2edba5", Name: pushFiles[2]},
 	}
 
-	artifactAttachTexts = []match.StateKey{{Digest: "2c26b46b68ff", Name: artFiles[0]}}
+	attachFile  = "foobar/attached"
+	attachTexts = []match.StateKey{{Digest: "2c26b46b68ff", Name: attachFile}}
 )
 
 var _ = Describe("OCI artifact user:", Ordered, func() {
@@ -45,14 +46,14 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 		var tempDir string
 		BeforeAll(func() {
 			tempDir = GinkgoT().TempDir()
-			if err := CopyTestData(artFiles, tempDir); err != nil {
+			if err := CopyTestData(pushFiles, tempDir); err != nil {
 				panic(err)
 			}
 		})
 
 		It("should push and pull an artifact", func() {
 			manifestName := "packed.json"
-			ORAS("push", Reference(Host, repo, tag), "--artifact-type", "test-artifact", artFiles[0], artFiles[1], artFiles[2], "-v", "--export-manifest", manifestName).
+			ORAS("push", Reference(Host, repo, tag), "--artifact-type", "test-artifact", pushFiles[0], pushFiles[1], pushFiles[2], "-v", "--export-manifest", manifestName).
 				MatchStatus(artifactPushTexts, true, 3).
 				WithWorkDir(tempDir).
 				WithDescription("push with manifest exported").Exec()
@@ -67,14 +68,14 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 				WithWorkDir(tempDir).
 				WithDescription("pull artFiles with config").Exec()
 
-			for _, f := range artFiles {
+			for _, f := range pushFiles {
 				Binary("diff", filepath.Join(f), filepath.Join(pullRoot, f)).
 					WithWorkDir(tempDir).
 					WithDescription("download identical file " + f).Exec()
 			}
 
-			ORAS("attach", Reference(Host, repo, tag), "--artifact-type", "test-artifact", "-v", artFiles[0], "-v", "--export-manifest", manifestName).
-				MatchStatus(artifactAttachTexts, true, 1).
+			ORAS("attach", Reference(Host, repo, tag), "--artifact-type", "test-artifact", "-v", attachFile, "-v", "--export-manifest", manifestName).
+				MatchStatus(attachTexts, true, 1).
 				WithWorkDir(tempDir).
 				WithDescription("attach with manifest exported").Exec()
 			session = ORAS("discover", Reference(Host, repo, tag), "-o", "json").Exec()
@@ -86,12 +87,17 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 				MatchContent(string(session.Out.Contents())).
 				WithDescription("fetch pushed manifest content").Exec()
 			ORAS("pull", Reference(Host, repo, tag), "-v", "-o", pullRoot).
-				MatchStatus(artifactPushTexts, true, 3).
+				MatchStatus([]match.StateKey{
+					{Digest: "2c26b46b68ff", Name: pushFiles[0]},
+					{Digest: "2c26b46b68ff", Name: pushFiles[1]},
+					{Digest: "fcde2b2edba5", Name: pushFiles[2]},
+					{Digest: "2c26b46b68ff", Name: attachFile},
+				}, true, 4).
 				WithWorkDir(tempDir).
 				WithDescription("pull artFiles with config").Exec()
-			Binary("diff", filepath.Join(artFiles[0]), filepath.Join(pullRoot, artFiles[0])).
+			Binary("diff", filepath.Join(attachFile), filepath.Join(pullRoot, attachFile)).
 				WithWorkDir(tempDir).
-				WithDescription("download identical file " + artFiles[0]).Exec()
+				WithDescription("download identical file " + attachFile).Exec()
 		})
 
 	})
