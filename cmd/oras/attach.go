@@ -148,7 +148,7 @@ func runAttach(opts attachOptions) error {
 	})
 
 	// push
-	root, err := oci.Upload(packOpts, packFunc, copyFunc)
+	root, err := oci.Upload(packOpts, packFunc, copyFunc, dst)
 	if err != nil {
 		return err
 	}

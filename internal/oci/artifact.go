@@ -18,19 +18,26 @@ package oci
 import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/registry/remote"
+	"oras.land/oras-go/v2/registry/remote/errcode"
 )
 
 type PackFunc func(opts oras.PackOptions) (ocispec.Descriptor, error)
 type CopyFunc func(desc ocispec.Descriptor) error
 
 // Upload packs an oci artifact and copies it with oci image fallback.
-func Upload(opts oras.PackOptions, pack PackFunc, copy CopyFunc) (ocispec.Descriptor, error) {
+func Upload(opts oras.PackOptions, pack PackFunc, copy CopyFunc, dst *remote.Repository) (ocispec.Descriptor, error) {
 	root, err := pack(opts)
 	if err != nil {
 		return ocispec.Descriptor{}, err
 	}
 
 	if err = copy(root); !opts.PackImageManifest && ociArtifactUnsupported(err) {
+		// if repo.referrersState == referrersState.referrersStateSupported {
+		// 	return err
+		// }
+		// repo.SetReferrersCapability(referrersState.referrersStateUnsupported)
+
 		// fallback to OCI image
 		opts.PackImageManifest = true
 		root, err = pack(opts)
@@ -43,6 +50,8 @@ func Upload(opts oras.PackOptions, pack PackFunc, copy CopyFunc) (ocispec.Descri
 }
 
 func ociArtifactUnsupported(err error) bool {
-	// TODO: 400 & MANIFEST_INVALID
-	return err != nil
+	if e, ok := err.(errcode.Error); ok {
+		return e.Code == "MANIFEST_INVALID"
+	}
+	return false
 }
