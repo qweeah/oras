@@ -86,7 +86,7 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 				MatchContent(string(session.Out.Contents())).
 				WithDescription("fetch pushed manifest content").Exec()
 			ORAS("pull", Reference(Host, repo, tag), "-v", "-o", pullRoot).
-				MatchStatus(artifactPushTexts, true, 1).
+				MatchStatus(artifactPushTexts, true, 3).
 				WithWorkDir(tempDir).
 				WithDescription("should pull artFiles with config").Exec()
 			Binary("diff", filepath.Join(artFiles[0]), filepath.Join(pullRoot, artFiles[0])).
