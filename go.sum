@@ -1,5 +1,7 @@
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 h1:UQHMgLO+TxOElx5B5HZ4hJQsoJ/PvUvKRhJHDQXO8P8=
 github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
+github.com/Wwwsylvia/oras-go/v2 v2.0.0-20221031082137-4be7b30a924e h1:uNaKuNvCVsLmpIXUtdnz+292qXaTiHjQxvzFQ/2c+Ew=
+github.com/Wwwsylvia/oras-go/v2 v2.0.0-20221031082137-4be7b30a924e/go.mod h1:YGHvWBGuqRlZgUyXUIoKsR3lcuCOb3DAtG0SEsEw1iY=
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/creack/pty v1.1.11 h1:07n33Z8lZxZ2qwegKbObQohDhXDQxiMMz1NOUGYlesw=
 github.com/creack/pty v1.1.11/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
@@ -63,5 +65,3 @@ gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
 gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gotest.tools/v3 v3.0.2 h1:kG1BFyqVHuQoVQiR1bWGnfz/fmHvvuiSPIV7rvl360E=
 gotest.tools/v3 v3.0.2/go.mod h1:3SzNCllyD9/Y+b5r9JIKQ474KzkZyqLqEfYqMsX94Bk=
-oras.land/oras-go/v2 v2.0.0-rc.3.0.20221028122946-7ab862cb2a0b h1:6fcOkoEQAcXGelhtdogjVphqmArlH/2ZmAHvAMV4RZw=
-oras.land/oras-go/v2 v2.0.0-rc.3.0.20221028122946-7ab862cb2a0b/go.mod h1:YGHvWBGuqRlZgUyXUIoKsR3lcuCOb3DAtG0SEsEw1iY=

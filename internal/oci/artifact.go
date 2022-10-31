@@ -16,6 +16,9 @@ limitations under the License.
 package oci
 
 import (
+	"errors"
+	"net/http"
+
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/registry/remote"
@@ -32,16 +35,8 @@ func Upload(opts oras.PackOptions, pack PackFunc, copy CopyFunc, dst *remote.Rep
 		return ocispec.Descriptor{}, err
 	}
 
-	err = copy(root)
-	// if err == nil && dst.referrersState == remote.referrersStateSupported {
-	//	// OCI artifact should be supported if referrer is supproted via API
-	// 	return ocispec.Descriptor{}, fmt.Errorf("OCI Artifact %q pushed but found referrer API is not supported in %s\n", root.Digest, dst.Reference)
-	// }
-
-	if !opts.PackImageManifest && ociArtifactUnsupported(err) {
-		// if repo.referrersState == referrersState.referrersStateUnknown {
-		//	repo.SetReferrersCapability(referrersState.referrersStateUnsupported)
-		// }
+	if err = copy(root); !opts.PackImageManifest && ociArtifactUnsupported(err) {
+		dst.SetReferrersCapability(false)
 
 		// fallback to OCI image
 		opts.PackImageManifest = true
@@ -55,8 +50,8 @@ func Upload(opts oras.PackOptions, pack PackFunc, copy CopyFunc, dst *remote.Rep
 }
 
 func ociArtifactUnsupported(err error) bool {
-	if e, ok := err.(errcode.Error); ok {
-		return e.Code == "MANIFEST_INVALID"
-	}
-	return false
+	var errResp errcode.ErrorResponse
+	var errCode errcode.Error
+	return errors.As(err, &errResp) && errResp.StatusCode == http.StatusBadRequest &&
+		errors.As(&errResp, &errCode) && errCode.Code == errcode.ErrorCodeManifestInvalid
 }
