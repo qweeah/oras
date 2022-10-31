@@ -50,8 +50,8 @@ func Upload(opts oras.PackOptions, pack PackFunc, copy CopyFunc, dst *remote.Rep
 }
 
 func ociArtifactUnsupported(err error) bool {
-	var errResp errcode.ErrorResponse
+	var errResp *errcode.ErrorResponse
 	var errCode errcode.Error
 	return errors.As(err, &errResp) && errResp.StatusCode == http.StatusBadRequest &&
-		errors.As(&errResp, &errCode) && errCode.Code == errcode.ErrorCodeManifestInvalid
+		errors.As(errResp, &errCode) && errCode.Code == errcode.ErrorCodeManifestInvalid
 }
