@@ -86,7 +86,7 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 			ORAS("manifest", "fetch", Reference(Host, repo, string(dgst))).
 				MatchContent(string(session.Out.Contents())).
 				WithDescription("fetch pushed manifest content").Exec()
-			ORAS("pull", Reference(Host, repo, tag), "-v", "-o", pullRoot).
+			ORAS("pull", Reference(Host, repo, string(dgst)), "-v", "-o", pullRoot).
 				MatchStatus([]match.StateKey{
 					{Digest: "2c26b46b68ff", Name: pushFiles[0]},
 					{Digest: "2c26b46b68ff", Name: pushFiles[1]},
