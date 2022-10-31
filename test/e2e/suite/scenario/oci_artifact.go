@@ -41,7 +41,7 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 	Auth()
 
 	repo := "oci-artifact"
-	When("pushing images and check", func() {
+	When("pushing images and attaching", func() {
 		tag := "artifact"
 		var tempDir string
 		BeforeAll(func() {
@@ -73,12 +73,14 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 					WithWorkDir(tempDir).
 					WithDescription("download identical file " + f).Exec()
 			}
+		})
 
+		It("should attach and pull an artifact", func() {
 			ORAS("attach", Reference(Host, repo, tag), "--artifact-type", "test-artifact", attachFile, "-v", "--export-manifest", manifestName).
 				MatchStatus(attachTexts, true, 1).
 				WithWorkDir(tempDir).
 				WithDescription("attach with manifest exported").Exec()
-			session = ORAS("discover", Reference(Host, repo, tag), "-o", "json").Exec()
+			session := ORAS("discover", Reference(Host, repo, tag), "-o", "json").Exec()
 			dgst := Binary("jq", "-r", ".manifests[].digest").
 				WithInput(session.Out).Exec().Out.Contents()
 
