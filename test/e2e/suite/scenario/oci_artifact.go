@@ -61,7 +61,7 @@ var _ = Describe("OCI image user:", Ordered, func() {
 				WithDescription("fetch pushed manifest content").Exec()
 			pullRoot := "pulled"
 			ORAS("pull", Reference(Host, repo, tag), "-v", "-o", pullRoot).
-				MatchStatus(artifactTexts, true, 2).
+				MatchStatus(artifactTexts, true, 3).
 				WithWorkDir(tempDir).
 				WithDescription("should pull artFiles with config").Exec()
 
