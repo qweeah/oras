@@ -46,7 +46,7 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 		var tempDir string
 		BeforeAll(func() {
 			tempDir = GinkgoT().TempDir()
-			if err := CopyTestData(pushFiles, tempDir); err != nil {
+			if err := CopyTestData(append(pushFiles, attachFile), tempDir); err != nil {
 				panic(err)
 			}
 		})
