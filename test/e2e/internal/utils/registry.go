@@ -13,11 +13,16 @@ limitations under the License.
 
 package utils
 
-import "github.com/opencontainers/go-digest"
+import (
+	"strings"
+
+	"github.com/opencontainers/go-digest"
+)
 
 // Reference generates the reference string from given parameters.
 func Reference(registry string, repo string, tagOrDigest string) string {
 	ret := registry + "/" + repo
+	tagOrDigest = strings.TrimSpace(tagOrDigest)
 
 	if err := digest.Digest(tagOrDigest).Validate(); err != nil {
 		ret += ":" + tagOrDigest
