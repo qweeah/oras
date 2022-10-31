@@ -34,9 +34,11 @@ func Upload(opts oras.PackOptions, pack PackFunc, copy CopyFunc, dst *remote.Rep
 
 	if err = copy(root); !opts.PackImageManifest && ociArtifactUnsupported(err) {
 		// if repo.referrersState == referrersState.referrersStateSupported {
+		//	// OCI artifact should be supported if referrer is supproted via API
 		// 	return err
+		// } else if repo.referrersState == referrersState.referrersStateUnknown {
+		//	repo.SetReferrersCapability(referrersState.referrersStateUnsupported)
 		// }
-		// repo.SetReferrersCapability(referrersState.referrersStateUnsupported)
 
 		// fallback to OCI image
 		opts.PackImageManifest = true
