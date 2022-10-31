@@ -34,7 +34,7 @@ var (
 	}
 
 	attachFile  = "foobar/attached"
-	attachTexts = []match.StateKey{{Digest: "2c26b46b68ff", Name: attachFile}}
+	attachTexts = []match.StateKey{{Digest: "55d9067ef2bf", Name: attachFile}}
 )
 
 var _ = Describe("OCI artifact user:", Ordered, func() {
@@ -74,7 +74,6 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 					WithDescription("download identical file " + f).Exec()
 			}
 
-			Binary("ls", "foobar", "-al").WithWorkDir(tempDir).Exec()
 			ORAS("attach", Reference(Host, repo, tag), "--artifact-type", "test-artifact", attachFile, "-v", "--export-manifest", manifestName).
 				MatchStatus(attachTexts, true, 1).
 				WithWorkDir(tempDir).
@@ -92,7 +91,7 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 					{Digest: "2c26b46b68ff", Name: pushFiles[0]},
 					{Digest: "2c26b46b68ff", Name: pushFiles[1]},
 					{Digest: "fcde2b2edba5", Name: pushFiles[2]},
-					{Digest: "2c26b46b68ff", Name: attachFile},
+					{Digest: "55d9067ef2bf", Name: attachFile},
 				}, true, 4).
 				WithWorkDir(tempDir).
 				WithDescription("pull attached artifact").Exec()
