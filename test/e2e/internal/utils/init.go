@@ -16,7 +16,10 @@ package utils
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"sync"
+	"sync/atomic"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
@@ -29,6 +32,7 @@ var ORASPath string
 
 // Host points to the registry service where E2E tests will be run against.
 var Host string
+var imageDir string
 
 func init() {
 	Host = os.Getenv("ORAS_REGISTRY_HOST")
@@ -42,6 +46,12 @@ func init() {
 	if err := ref.ValidateRegistry(); err != nil {
 		panic(err)
 	}
+	// setup test data
+	pwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	imageDir = filepath.Join(pwd, "..", "..", "testdata", "images")
 	BeforeSuite(func() {
 		ORASPath = os.Getenv("ORAS_PATH")
 		if filepath.IsAbs(ORASPath) {
@@ -64,5 +74,26 @@ func init() {
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		DeferCleanup(gexec.CleanupBuildArtifacts)
 		fmt.Printf("Testing based on temp binary locates in %q\n", ORASPath)
+	})
+}
+
+var authDone atomic.Bool
+var authTry sync.Mutex
+
+// Auth does exactly one `oras login` and blocks return until it finishes or
+// fails.
+func Auth() {
+	JustBeforeEach(func() {
+		if authDone.Load() {
+			return
+		}
+		authTry.Lock()
+		defer authTry.Unlock()
+		if authDone.Load() {
+			return
+		}
+		cmd := exec.Command(ORASPath, "login", Host, "-u", USERNAME, "-p", PASSWORD)
+		gomega.Expect(cmd.Run()).ShouldNot(gomega.HaveOccurred())
+		authDone.Store(true)
 	})
 }
