@@ -57,11 +57,8 @@ var _ = Describe("OCI image user:", Ordered, func() {
 
 			session := Binary("cat", manifestName).WithWorkDir(tempDir).Exec()
 			ORAS("manifest", "fetch", Reference(Host, repo, tag)).
+				MatchContent(string(session.Out.Contents())).
 				WithDescription("fetch pushed manifest content").Exec()
-			Binary("jq", "del(.annotations)").
-				WithInput(session.Out).
-				MatchContent(string(session.Out.Contents())).Exec()
-
 			pullRoot := "pulled"
 			ORAS("pull", Reference(Host, repo, tag), "-v", "-o", pullRoot).
 				MatchStatus(artifactTexts, true, 2).
