@@ -74,7 +74,7 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 					WithDescription("download identical file " + f).Exec()
 			}
 
-			ORAS("ls", "foobar", "-al").WithWorkDir(tempDir).Exec()
+			Binary("ls", "foobar", "-al").WithWorkDir(tempDir).Exec()
 			ORAS("attach", Reference(Host, repo, tag), "--artifact-type", "test-artifact", attachFile, "-v", "--export-manifest", manifestName).
 				MatchStatus(attachTexts, true, 1).
 				WithWorkDir(tempDir).
