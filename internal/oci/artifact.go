@@ -37,7 +37,6 @@ func Upload(opts oras.PackOptions, pack PackFunc, copy CopyFunc, dst *remote.Rep
 
 	if err = copy(root); !opts.PackImageManifest && ociArtifactUnsupported(err) {
 		dst.SetReferrersCapability(false)
-
 		// fallback to OCI image
 		opts.PackImageManifest = true
 		root, err = pack(opts)
