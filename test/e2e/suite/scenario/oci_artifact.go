@@ -65,12 +65,12 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 			ORAS("pull", Reference(Host, repo, tag), "-v", "-o", pullRoot).
 				MatchStatus(artifactPushTexts, true, 3).
 				WithWorkDir(tempDir).
-				WithDescription("should pull artFiles with config").Exec()
+				WithDescription("pull artFiles with config").Exec()
 
 			for _, f := range artFiles {
 				Binary("diff", filepath.Join(f), filepath.Join(pullRoot, f)).
 					WithWorkDir(tempDir).
-					WithDescription("should download identical file " + f).Exec()
+					WithDescription("download identical file " + f).Exec()
 			}
 
 			ORAS("attach", Reference(Host, repo, tag), "--artifact-type", "test-artifact", "-v", artFiles[0], "-v", "--export-manifest", manifestName).
@@ -88,10 +88,10 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 			ORAS("pull", Reference(Host, repo, tag), "-v", "-o", pullRoot).
 				MatchStatus(artifactPushTexts, true, 3).
 				WithWorkDir(tempDir).
-				WithDescription("should pull artFiles with config").Exec()
+				WithDescription("pull artFiles with config").Exec()
 			Binary("diff", filepath.Join(artFiles[0]), filepath.Join(pullRoot, artFiles[0])).
 				WithWorkDir(tempDir).
-				WithDescription("should download identical file " + artFiles[0]).Exec()
+				WithDescription("download identical file " + artFiles[0]).Exec()
 		})
 
 	})
