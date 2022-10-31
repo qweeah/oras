@@ -121,20 +121,20 @@ func runAttach(opts attachOptions) error {
 	packFunc := oci.PackFunc(func(po oras.PackOptions) (ocispec.Descriptor, error) {
 		return oras.Pack(ctx, store, opts.artifactType, blobs, po)
 	})
+	var committed sync.Map
 	copyFunc := oci.CopyFunc(func(root ocispec.Descriptor) error {
-		o := display.UploadOption(store, &sync.Map{}, opts.concurrency, opts.Verbose, blobs)
+		o := display.UploadOption(store, &committed, opts.concurrency, opts.Verbose, blobs)
 		findSuccessors := o.FindSuccessors
 		o.FindSuccessors = func(ctx context.Context, fetcher content.Fetcher, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
 			successors, err := findSuccessors(ctx, fetcher, desc)
 			if err != nil {
 				return nil, err
 			}
-			// skip subject to save one HEAD towards dst
-			if root.MediaType == ocispec.MediaTypeArtifactManifest ||
-				root.MediaType == ocispec.MediaTypeImageManifest {
+			if !isEqualOCIDescriptor(desc, root) {
 				return successors, nil
 			}
 
+			// skip subject to save one HEAD towards dst
 			j := len(successors) - 1
 			for i, s := range successors {
 				if isEqualOCIDescriptor(s, subject) {
