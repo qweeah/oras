@@ -51,8 +51,9 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 			}
 		})
 
+		manifestName := "packed.json"
+		pullRoot := "pulled"
 		It("should push and pull an artifact", func() {
-			manifestName := "packed.json"
 			ORAS("push", Reference(Host, repo, tag), "--artifact-type", "test-artifact", pushFiles[0], pushFiles[1], pushFiles[2], "-v", "--export-manifest", manifestName).
 				MatchStatus(artifactPushTexts, true, 3).
 				WithWorkDir(tempDir).
@@ -62,7 +63,6 @@ var _ = Describe("OCI artifact user:", Ordered, func() {
 			ORAS("manifest", "fetch", Reference(Host, repo, tag)).
 				MatchContent(string(session.Out.Contents())).
 				WithDescription("fetch pushed manifest content").Exec()
-			pullRoot := "pulled"
 			ORAS("pull", Reference(Host, repo, tag), "-v", "-o", pullRoot).
 				MatchStatus(artifactPushTexts, true, 3).
 				WithWorkDir(tempDir).
