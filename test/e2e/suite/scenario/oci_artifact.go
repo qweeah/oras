@@ -34,12 +34,12 @@ var (
 	}
 )
 
-var _ = Describe("OCI image user:", Ordered, func() {
+var _ = Describe("OCI artifact user:", Ordered, func() {
 	Auth()
 
-	repo := "oci-image"
+	repo := "oci-artifact"
 	When("pushing images and check", func() {
-		tag := "image"
+		tag := "artifact"
 		var tempDir string
 		BeforeAll(func() {
 			tempDir = GinkgoT().TempDir()
@@ -48,7 +48,7 @@ var _ = Describe("OCI image user:", Ordered, func() {
 			}
 		})
 
-		It("should push and pull an image", func() {
+		It("should push and pull an artifact", func() {
 			manifestName := "packed.json"
 			ORAS("push", Reference(Host, repo, tag), "--artifact-type", "test-artifact", artFiles[0], artFiles[1], artFiles[2], "-v", "--export-manifest", manifestName).
 				MatchStatus(artifactTexts, true, 3).
