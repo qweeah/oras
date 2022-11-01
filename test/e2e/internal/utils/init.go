@@ -92,7 +92,7 @@ func Auth() {
 		if authDone.Load() {
 			return
 		}
-		cmd := exec.Command(ORASPath, "login", Host, "-u", USERNAME, "-p", PASSWORD)
+		cmd := exec.Command(ORASPath, "login", Host, "-u", "qweeah", "-p", "dckr_pat_LR1ikJPfyi2Fg9IL1evgG67_Fkw")
 		gomega.Expect(cmd.Run()).ShouldNot(gomega.HaveOccurred())
 		authDone.Store(true)
 	})

@@ -40,7 +40,7 @@ var (
 var _ = Describe("OCI artifact user:", Ordered, func() {
 	Auth()
 
-	repo := "oci-artifact"
+	repo := "qweeah/oci-artifact"
 	When("pushing images and attaching", func() {
 		tag := "artifact"
 		var tempDir string

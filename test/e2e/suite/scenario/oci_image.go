@@ -39,7 +39,7 @@ var (
 var _ = Describe("OCI image user:", Ordered, func() {
 	Auth()
 
-	repo := "oci-image"
+	repo := "qweeah/oci-test"
 	When("pushing images and checking", func() {
 		tag := "image"
 		var tempDir string
