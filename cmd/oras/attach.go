@@ -130,14 +130,14 @@ func runAttach(opts attachOptions) error {
 			if err != nil {
 				return nil, err
 			}
-			if !isEqualOCIDescriptor(desc, root) {
+			if !content.Equal(desc, root) {
 				return successors, nil
 			}
 
 			// skip subject to save one HEAD towards dst
 			j := len(successors) - 1
 			for i, s := range successors {
-				if isEqualOCIDescriptor(s, subject) {
+				if content.Equal(s, subject) {
 					// swap subject to end and slice it off
 					successors[i] = successors[j]
 					return successors[:j], nil
@@ -159,8 +159,4 @@ func runAttach(opts attachOptions) error {
 
 	// Export manifest
 	return opts.ExportManifest(ctx, store, root)
-}
-
-func isEqualOCIDescriptor(a, b ocispec.Descriptor) bool {
-	return a.Size == b.Size && a.Digest == b.Digest && a.MediaType == b.MediaType
 }
