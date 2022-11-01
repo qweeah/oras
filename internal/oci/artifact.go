@@ -35,10 +35,9 @@ func Upload(opts oras.PackOptions, pack PackFunc, copy CopyFunc, dst *remote.Rep
 		return ocispec.Descriptor{}, err
 	}
 
-	err = copy(root)
-	if opts.PackImageManifest || !isOciArtifactUnsupportedErr(err) {
+	if err := copy(root); opts.PackImageManifest || !isOciArtifactUnsupportedErr(err) {
 		// no fallback
-		return root, err
+		return ocispec.Descriptor{}, err
 	}
 
 	// fallback to OCI image
@@ -48,8 +47,7 @@ func Upload(opts oras.PackOptions, pack PackFunc, copy CopyFunc, dst *remote.Rep
 	if err != nil {
 		return ocispec.Descriptor{}, err
 	}
-	err = copy(root)
-	return root, err
+	return root, copy(root)
 }
 
 func isOciArtifactUnsupportedErr(err error) bool {
