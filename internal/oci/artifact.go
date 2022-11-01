@@ -36,7 +36,7 @@ func Upload(opts oras.PackOptions, pack PackFunc, copy CopyFunc, dst *remote.Rep
 	}
 
 	err = copy(root)
-	if !opts.PackImageManifest || !isOciArtifactUnsupportedErr(err) {
+	if opts.PackImageManifest || !isOciArtifactUnsupportedErr(err) {
 		// no fallback
 		return root, err
 	}
