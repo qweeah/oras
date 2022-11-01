@@ -35,21 +35,24 @@ func Upload(opts oras.PackOptions, pack PackFunc, copy CopyFunc, dst *remote.Rep
 		return ocispec.Descriptor{}, err
 	}
 
-	if err = copy(root); !opts.PackImageManifest && ociArtifactUnsupported(err) {
-		dst.SetReferrersCapability(false)
-
-		// fallback to OCI image
-		opts.PackImageManifest = true
-		root, err = pack(opts)
-		if err != nil {
-			return ocispec.Descriptor{}, err
-		}
-		err = copy(root)
+	err = copy(root)
+	if !opts.PackImageManifest || !isOciArtifactUnsupportedErr(err) {
+		// no fallback
+		return root, err
 	}
+
+	// fallback to OCI image
+	dst.SetReferrersCapability(false)
+	opts.PackImageManifest = true
+	root, err = pack(opts)
+	if err != nil {
+		return ocispec.Descriptor{}, err
+	}
+	err = copy(root)
 	return root, err
 }
 
-func ociArtifactUnsupported(err error) bool {
+func isOciArtifactUnsupportedErr(err error) bool {
 	var errResp *errcode.ErrorResponse
 	var errCode errcode.Error
 	return errors.As(err, &errResp) && errResp.StatusCode == http.StatusBadRequest &&
