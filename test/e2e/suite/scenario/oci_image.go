@@ -40,7 +40,7 @@ var _ = Describe("OCI image user:", Ordered, func() {
 	Auth()
 
 	repo := "oci-image"
-	When("pushing images and check", func() {
+	When("pushing images and checking", func() {
 		tag := "image"
 		var tempDir string
 		BeforeAll(func() {
@@ -66,12 +66,12 @@ var _ = Describe("OCI image user:", Ordered, func() {
 			ORAS("pull", Reference(Host, repo, tag), "-v", "--config", files[0], "-o", pullRoot).
 				MatchStatus(statusKeys, true, 3).
 				WithWorkDir(tempDir).
-				WithDescription("should pull files with config").Exec()
+				WithDescription("pull files with config").Exec()
 
 			for _, f := range files {
 				Binary("diff", filepath.Join(f), filepath.Join(pullRoot, f)).
 					WithWorkDir(tempDir).
-					WithDescription("should download identical file " + f).Exec()
+					WithDescription("download identical file " + f).Exec()
 			}
 		})
 
