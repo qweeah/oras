@@ -19,6 +19,7 @@ on:
       - main
       - release-*
       - test
+      - test-play
   pull_request:
     branches:
       - main
