@@ -54,11 +54,10 @@ jobs:
           trap 'docker kill oras-e2e || true' ERR
           echo "--------------- Testing oci artifact ---------------"
           docker run --pull always -d -p 5000:5000 --rm --name oras-e2e \
-            --env HTTP_AUTH_HTPASSWD_PATH=/etc/data/passwd \
-            --mount type=bind,source=$mnt_root/docker,target=/var/lib/registry/docker \
             --mount type=bind,source=$mnt_root/passwd_bcrypt,target=/etc/data/passwd \
+            --mount type=bind,source=$GITHUB_WORKSPACE/test/e2e/testdata/distribution/passwd_bcrypt,target=/etc/zot/config.json \
             ghcr.io/project-zot/zot-linux-amd64:latest
-          ginkgo -r -p --succinct suite
+          ginkgo -r -p --succinct suite/scenario
 
 
           echo "--------------- Testing oci image fallback ---------------"
