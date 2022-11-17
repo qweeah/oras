@@ -57,7 +57,7 @@ jobs:
             --env HTTP_AUTH_HTPASSWD_PATH=/etc/data/passwd \
             --mount type=bind,source=$mnt_root/docker,target=/var/lib/registry/docker \
             --mount type=bind,source=$mnt_root/passwd_bcrypt,target=/etc/data/passwd \
-            zot:latest
+            ghcr.io/project-zot/zot-linux-amd64:latest
           ginkgo -r -p --succinct suite
 
 
