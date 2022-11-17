@@ -55,14 +55,13 @@ jobs:
           echo "--------------- Testing oci artifact ---------------"
           docker run --pull always -d -p 5000:5000 --rm --name oras-e2e \
             --mount type=bind,source=$mnt_root/passwd_bcrypt,target=/etc/data/passwd \
-            --mount type=bind,source=$GITHUB_WORKSPACE/test/e2e/testdata/distribution/passwd_bcrypt,target=/etc/zot/config.json \
+            --mount type=bind,source=$GITHUB_WORKSPACE/test/e2e/testdata/distribution/zot.json,target=/etc/zot/config.json \
             ghcr.io/project-zot/zot-linux-amd64:latest
           ginkgo -r -p --succinct suite/scenario
 
 
           echo "--------------- Testing oci image fallback ---------------"
           docker kill oras-e2e || true
-          whoami
           ls -al /home/runner/work/oras/oras/test/e2e/testdata/distribution/mount/docker/registry/v2/repositories/oci-image/_manifests/tags/image/current/link
           sudo rm -rf $mnt_root/docker/
           for layer in $(ls $mnt_root/*.tar.gz); do
