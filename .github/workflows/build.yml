@@ -55,12 +55,10 @@ jobs:
           trap 'docker kill oras-e2e || true' ERR
           echo "--------------- Testing oci artifact ---------------"
           docker run --pull always -d -p 5000:5000 --rm --name oras-e2e \
-            --env REGISTRY_STORAGE_DELETE_ENABLED=true \
-            --env REGISTRY_AUTH_HTPASSWD_REALM=test-basic \
-            --env REGISTRY_AUTH_HTPASSWD_PATH=/etc/docker/registry/passwd \
-            --mount type=bind,source=$mnt_root/docker,target=/tmp/registry-root-dir/docker \
-            --mount type=bind,source=$mnt_root/passwd_bcrypt,target=/etc/docker/registry/passwd \
-            ghcr.io/oci-playground/registry:v3.0.0-alpha.1
+            --env HTTP_AUTH_HTPASSWD_PATH=/etc/data/passwd \
+            --mount type=bind,source=$mnt_root/docker,target=/var/lib/registry/docker \
+            --mount type=bind,source=$mnt_root/passwd_bcrypt,target=/etc/data/passwd \
+            zot:latest
           ginkgo -r -p --succinct suite
 
 
