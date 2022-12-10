@@ -49,13 +49,6 @@ jobs:
           check-latest: true
       - name: Build CLI
         run: make build-linux-amd64
-      - name: Temporarily install v0.16.0 (remove this section later)
-        run: |
-          cd /tmp
-          curl -LO https://github.com/oras-project/oras/releases/download/v0.16.0/oras_0.16.0_linux_amd64.tar.gz
-          mkdir -p oras-install/
-          tar -zxf oras_0.16.0_*.tar.gz -C oras-install/
-          mv oras-install/oras $GITHUB_WORKSPACE/bin/linux/amd64/oras
       - name: Check Version
         run: bin/linux/amd64/oras version
       - name: Run Compatibility Tests
