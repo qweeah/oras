@@ -70,9 +70,9 @@ jobs:
           grep -q "hello world" artifact.txt
           rm -f artifact.txt
           echo "{\"artifact\": \"\", \"signature\": \"pat hancock\"}" > signature.json
-          $ORAS_PATH attach --plain-http $ORAS_REGISTRY_HOST/busybox:latest --artifact-type 'signature/example' ./signature.json:application/json
+          $ORAS_PATH attach --plain-http $ORAS_REGISTRY_HOST/busybox:latest --artifact-type 'signature/example' ./signature.json:application/json -dv
           echo "{\"version\": \"0.0.0.0\", \"artifact\": \"'localhost:8000/busybox:latest'\", \"contents\": \"good\"}" > sbom.json
-          $ORAS_PATH attach --plain-http $ORAS_REGISTRY_HOST/busybox:latest --artifact-type 'sbom/example' ./sbom.json:application/json
+          $ORAS_PATH attach --plain-http $ORAS_REGISTRY_HOST/busybox:latest --artifact-type 'sbom/example' ./sbom.json:application/json -dv
           $ORAS_PATH discover --plain-http -o json $ORAS_REGISTRY_HOST/busybox:latest
           docker kill zot || true
         env:
