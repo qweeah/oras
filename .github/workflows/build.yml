@@ -18,6 +18,7 @@ on:
     branches:
       - main
       - release-*
+      - test-*
   pull_request:
     branches:
       - main
@@ -47,6 +48,24 @@ jobs:
           go install github.com/onsi/ginkgo/v2/ginkgo
           mnt_root="$GITHUB_WORKSPACE/test/e2e/testdata/distribution/mount"
           rm -rf $mnt_root/docker
+          for layer in $(ls $mnt_root/*.tar.gz); do
+            tar -xvzf $layer -C $mnt_root
+          done
+          trap 'docker kill oras-e2e || true' ERR
+          echo "--------------- Testing oci artifact ---------------"
+          docker run --pull always -d -p 5000:5000 --rm --name oras-e2e \
+            --env REGISTRY_STORAGE_DELETE_ENABLED=true \
+            --env REGISTRY_AUTH_HTPASSWD_REALM=test-basic \
+            --env REGISTRY_AUTH_HTPASSWD_PATH=/etc/docker/registry/passwd \
+            --mount type=bind,source=$mnt_root/docker,target=/tmp/registry-root-dir/docker \
+            --mount type=bind,source=$mnt_root/passwd_bcrypt,target=/etc/docker/registry/passwd \
+            jinzha1.azurecr.io/distribution-play:hack
+          ginkgo -r -p --succinct suite
+          echo "--------------- Testing oci image fallback ---------------"
+          docker kill oras-e2e || true
+          whoami
+          ls -al /home/runner/work/oras/oras/test/e2e/testdata/distribution/mount/docker/registry/v2/repositories/oci-image/_manifests/tags/image/current/link
+          sudo rm -rf $mnt_root/docker/
           for layer in $(ls $mnt_root/*.tar.gz); do
             tar -xvzf $layer -C $mnt_root
           done
