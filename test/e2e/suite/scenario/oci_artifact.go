@@ -38,15 +38,13 @@ var (
 )
 
 var _ = Describe("OCI artifact user:", Ordered, func() {
-	Auth()
-
 	repo := "oci-artifact"
 	When("pushing images and attaching", func() {
 		tag := "artifact"
 		var tempDir string
 		BeforeAll(func() {
 			tempDir = GinkgoT().TempDir()
-			if err := CopyTestData(append(pushFiles, attachFile), tempDir); err != nil {
+			if err := CopyTestData(tempDir); err != nil {
 				panic(err)
 			}
 		})
