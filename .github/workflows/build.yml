@@ -47,7 +47,6 @@ jobs:
           cd $GITHUB_WORKSPACE/test/e2e
           go install github.com/onsi/ginkgo/v2/ginkgo
           ginkgo -r -p --succinct suite/scenario
-
         env:
           ORAS_PATH: bin/linux/amd64/oras
           ORAS_REGISTRY_HOST: docker.io
