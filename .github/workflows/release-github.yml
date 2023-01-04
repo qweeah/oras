@@ -17,6 +17,7 @@ on:
   push:
     tags:
       - v*
+      - feat-s390x-arch
 
 jobs:
   build:
