@@ -18,6 +18,7 @@ on:
     branches:
       - main
       - release-*
+      - feat-s390x-arch
   pull_request:
     branches:
       - main
