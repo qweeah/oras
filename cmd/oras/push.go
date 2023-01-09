@@ -283,7 +283,14 @@ func pushArtifact(dst *remote.Repository, pack packFunc, packOpts *oras.PackOpti
 
 func isManifestUnsupported(err error) bool {
 	var errResp *errcode.ErrorResponse
-	if !errors.As(err, &errResp) || errResp.StatusCode != http.StatusBadRequest {
+	if errors.As(err, &errResp) {
+		if errResp.StatusCode == http.StatusUnsupportedMediaType {
+			// As of January 2023, Quay is known to return
+			// UnsupportedMediaType error when putting an OCI
+			// artifact manifest.
+			return true
+		}
+	} else if errResp.StatusCode != http.StatusBadRequest {
 		return false
 	}
 
