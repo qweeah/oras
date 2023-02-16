@@ -91,7 +91,6 @@ var _ = Describe("Common registry users:", func() {
 			ORAS("attach", "--artifact-type", "test.attach", subjectRef, fmt.Sprintf("%s:%s", foobar.AttachFileName, foobar.AttachFileMedia), "--image-spec", "v1.1-image").
 				WithWorkDir(tempDir).
 				MatchStatus([]match.StateKey{foobar.AttachFileStateKey}, false, 1).Exec()
-
 			// validate
 			var index ocispec.Index
 			bytes := ORAS("discover", subjectRef, "-o", "json").Exec().Out.Contents()
@@ -108,7 +107,6 @@ var _ = Describe("Common registry users:", func() {
 			ORAS("attach", "--artifact-type", "test.attach", subjectRef, fmt.Sprintf("%s:%s", foobar.AttachFileName, foobar.AttachFileMedia), "--image-spec", "v1.1-artifact").
 				WithWorkDir(tempDir).
 				MatchStatus([]match.StateKey{foobar.AttachFileStateKey}, false, 1).Exec()
-
 			// validate
 			var index ocispec.Index
 			bytes := ORAS("discover", subjectRef, "-o", "json").Exec().Out.Contents()
