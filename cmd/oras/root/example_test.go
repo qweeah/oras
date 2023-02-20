@@ -17,6 +17,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"oras.land/oras/cmd/oras/root"
 )
 
 // Example gives playable snippets of using oras CLI in command-line scripting
@@ -24,7 +26,7 @@ import (
 func Example() {
 	// change below array to play with your own cmd args:
 	args := []string{"repo", "ls", "mcr.microsoft.com"}
-	cmd := cmd.NewRoot()
+	cmd := root.New()
 	cmd.SetArgs(args)
 	fmt.Printf("Executing 'oras %s':", strings.Join(args, " "))
 	err := cmd.Execute()
