@@ -12,16 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package cmd
+package root
 
 import (
 	"github.com/spf13/cobra"
-	"oras.land/oras/cmd/oras/blob"
-	"oras.land/oras/cmd/oras/manifest"
-	"oras.land/oras/cmd/oras/repository"
+	"oras.land/oras/cmd/oras/root/blob"
+	"oras.land/oras/cmd/oras/root/manifest"
+	"oras.land/oras/cmd/oras/root/repository"
 )
 
-func NewRoot() *cobra.Command {
+func New() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "oras [command]",
 		SilenceUsage: true,

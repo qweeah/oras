@@ -20,13 +20,13 @@ import (
 	"os"
 	"os/signal"
 
-	"oras.land/oras/cmd/oras/cmd"
+	"oras.land/oras/cmd/oras/root"
 )
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
-	root := cmd.NewRoot()
+	root := root.New()
 	if err := root.ExecuteContext(ctx); err != nil {
 		cancel()
 		os.Exit(1)
