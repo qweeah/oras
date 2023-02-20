@@ -60,7 +60,7 @@ Example - Show tags of the target OCI layout archive 'layout.tar':
 		Aliases: []string{"show-tags"},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			opts.RawReference = args[0]
-			return option.Parse(&opts)
+			return option.Parse(&opts, cmd, args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return showTags(opts)
@@ -73,15 +73,14 @@ Example - Show tags of the target OCI layout archive 'layout.tar':
 }
 
 func showTags(opts showTagsOptions) error {
-	ctx, _ := opts.SetLoggerLevel()
-	finder, err := opts.NewReadonlyTarget(ctx, opts.Common)
+	finder, err := opts.NewReadonlyTarget(opts.Common)
 	if err != nil {
 		return err
 	}
 	if opts.Reference != "" {
 		return fmt.Errorf("unexpected tag or digest %q found in repository reference %q", opts.Reference, opts.RawReference)
 	}
-	return finder.Tags(ctx, opts.last, func(tags []string) error {
+	return finder.Tags(opts.Context(), opts.last, func(tags []string) error {
 		for _, tag := range tags {
 			if opts.excludeDigestTag && isDigestTag(tag) {
 				continue

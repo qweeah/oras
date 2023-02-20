@@ -53,7 +53,7 @@ Example - List the repositories under the registry that include values lexically
 		Args:    cobra.ExactArgs(1),
 		Aliases: []string{"list"},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return option.Parse(&opts)
+			return option.Parse(&opts, cmd, args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
@@ -70,12 +70,11 @@ Example - List the repositories under the registry that include values lexically
 }
 
 func listRepository(opts repositoryOptions) error {
-	ctx, _ := opts.SetLoggerLevel()
 	reg, err := opts.Remote.NewRegistry(opts.hostname, opts.Common)
 	if err != nil {
 		return err
 	}
-	return reg.Repositories(ctx, opts.last, func(repos []string) error {
+	return reg.Repositories(opts.Context(), opts.last, func(repos []string) error {
 		for _, repo := range repos {
 			if subRepo, found := strings.CutPrefix(repo, opts.namespace); found {
 				fmt.Println(subRepo)

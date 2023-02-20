@@ -76,7 +76,7 @@ Example - Fetch raw manifest from an OCI layout archive file 'layout.tar':
 				return errors.New("`--output -` cannot be used with `--descriptor` at the same time")
 			}
 			opts.RawReference = args[0]
-			return option.Parse(&opts)
+			return option.Parse(&opts, cmd, args)
 		},
 		Aliases: []string{"get"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -91,9 +91,7 @@ Example - Fetch raw manifest from an OCI layout archive file 'layout.tar':
 }
 
 func fetchManifest(opts fetchOptions) (fetchErr error) {
-	ctx, _ := opts.SetLoggerLevel()
-
-	target, err := opts.NewReadonlyTarget(ctx, opts.Common)
+	target, err := opts.NewReadonlyTarget(opts.Common)
 	if err != nil {
 		return err
 	}
@@ -110,6 +108,7 @@ func fetchManifest(opts fetchOptions) (fetchErr error) {
 	}
 
 	var desc ocispec.Descriptor
+	ctx := opts.Context()
 	if opts.OutputDescriptor && opts.outputPath == "" {
 		// fetch manifest descriptor only
 		fetchOpts := oras.DefaultResolveOptions

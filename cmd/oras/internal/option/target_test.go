@@ -22,7 +22,7 @@ import (
 func TestTarget_Parse_oci(t *testing.T) {
 	opts := Target{isOCILayout: true}
 
-	if err := opts.Parse(); err != nil {
+	if err := opts.Parse(nil, nil); err != nil {
 		t.Errorf("Target.Parse() error = %v", err)
 	}
 	if opts.Type != TargetTypeOCILayout {
@@ -32,7 +32,7 @@ func TestTarget_Parse_oci(t *testing.T) {
 
 func TestTarget_Parse_remote(t *testing.T) {
 	opts := Target{isOCILayout: false}
-	if err := opts.Parse(); err != nil {
+	if err := opts.Parse(nil, nil); err != nil {
 		t.Errorf("Target.Parse() error = %v", err)
 	}
 	if opts.Type != TargetTypeRemote {

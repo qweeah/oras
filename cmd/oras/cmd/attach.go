@@ -78,7 +78,7 @@ Example - Attach file to the manifest tagged 'v1' in an OCI layout folder 'layou
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			opts.RawReference = args[0]
 			opts.FileRefs = args[1:]
-			if err := option.Parse(&opts); err != nil {
+			if err := option.Parse(&opts, cmd, args); err != nil {
 				return err
 			}
 			return nil
@@ -97,7 +97,7 @@ Example - Attach file to the manifest tagged 'v1' in an OCI layout folder 'layou
 }
 
 func runAttach(opts attachOptions) error {
-	ctx, _ := opts.SetLoggerLevel()
+	ctx := opts.Context()
 	annotations, err := opts.LoadManifestAnnotations()
 	if err != nil {
 		return err

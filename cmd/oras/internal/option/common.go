@@ -19,31 +19,39 @@ import (
 	"context"
 
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"oras.land/oras/internal/trace"
 )
 
 // Common option struct.
 type Common struct {
-	Debug   bool
-	Verbose bool
+	debugFlag bool
+	Verbose   bool
+
+	Context func() context.Context
+	Logger  logrus.FieldLogger
 }
 
 // ApplyFlags applies flags to a command flag set.
 func (opts *Common) ApplyFlags(fs *pflag.FlagSet) {
-	fs.BoolVarP(&opts.Debug, "debug", "d", false, "debug mode")
+	fs.BoolVarP(&opts.debugFlag, "debug", "d", false, "debug mode")
 	fs.BoolVarP(&opts.Verbose, "verbose", "v", false, "verbose output")
 }
 
-// SetLoggerLevel sets up the logger based on common options.
-func (opts *Common) SetLoggerLevel() (context.Context, logrus.FieldLogger) {
+// Parse sets up the logger and command context based on common options.
+func (opts *Common) Parse(cmd *cobra.Command, _ []string) error {
 	var logLevel logrus.Level
-	if opts.Debug {
+	if opts.debugFlag {
 		logLevel = logrus.DebugLevel
 	} else if opts.Verbose {
 		logLevel = logrus.InfoLevel
 	} else {
 		logLevel = logrus.WarnLevel
 	}
-	return trace.WithLoggerLevel(context.Background(), logLevel)
+	var ctx context.Context
+	ctx, opts.Logger = trace.WithLoggerLevel(cmd.Context(), logLevel)
+	cmd.SetContext(ctx)
+	opts.Context = cmd.Context
+	return nil
 }

@@ -84,7 +84,7 @@ Example - Pull artifact files from an OCI layout archive 'layout.tar':
 		Args: cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			opts.RawReference = args[0]
-			return option.Parse(&opts)
+			return option.Parse(&opts, cmd, args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runPull(opts)
@@ -183,8 +183,7 @@ func runPull(opts pullOptions) error {
 		return ret, nil
 	}
 
-	ctx, _ := opts.SetLoggerLevel()
-	target, err := opts.NewReadonlyTarget(ctx, opts.Common)
+	target, err := opts.NewReadonlyTarget(opts.Common)
 	if err != nil {
 		return err
 	}
@@ -237,7 +236,7 @@ func runPull(opts pullOptions) error {
 	}
 
 	// Copy
-	desc, err := oras.Copy(ctx, src, opts.Reference, dst, opts.Reference, copyOptions)
+	desc, err := oras.Copy(opts.Context(), src, opts.Reference, dst, opts.Reference, copyOptions)
 	if err != nil {
 		return err
 	}

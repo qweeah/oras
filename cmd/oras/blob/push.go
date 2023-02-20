@@ -83,7 +83,7 @@ Example - Push blob 'hi.txt' into an OCI layout folder 'layout-dir':
 					return errors.New("`--size` must be provided if the blob is read from stdin")
 				}
 			}
-			return option.Parse(&opts)
+			return option.Parse(&opts, cmd, args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return pushBlob(opts)
@@ -97,8 +97,6 @@ Example - Push blob 'hi.txt' into an OCI layout folder 'layout-dir':
 }
 
 func pushBlob(opts pushBlobOptions) (err error) {
-	ctx, _ := opts.SetLoggerLevel()
-
 	repo, err := opts.NewTarget(opts.Common)
 	if err != nil {
 		return err
@@ -111,6 +109,7 @@ func pushBlob(opts pushBlobOptions) (err error) {
 	}
 	defer rc.Close()
 
+	ctx := opts.Context()
 	exists, err := repo.Exists(ctx, desc)
 	if err != nil {
 		return err

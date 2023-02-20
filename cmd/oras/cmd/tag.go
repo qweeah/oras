@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package tag
+package cmd
 
 import (
 	"github.com/spf13/cobra"
@@ -30,7 +30,7 @@ type tagOptions struct {
 	targetRefs  []string
 }
 
-func TagCmd() *cobra.Command {
+func tagCmd() *cobra.Command {
 	var opts tagOptions
 	cmd := &cobra.Command{
 		Use:   "tag [flags] <name>{:<tag>|@<digest>} <new_tag> [...]",
@@ -58,7 +58,7 @@ Example - Tag the manifest 'v1.0.1' to 'v1.0.2' in an OCI layout folder 'layout-
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			opts.RawReference = args[0]
 			opts.targetRefs = args[1:]
-			return option.Parse(&opts)
+			return option.Parse(&opts, cmd, args)
 		},
 		RunE: func(_ *cobra.Command, args []string) error {
 			return tagManifest(opts)
@@ -71,7 +71,6 @@ Example - Tag the manifest 'v1.0.1' to 'v1.0.2' in an OCI layout folder 'layout-
 }
 
 func tagManifest(opts tagOptions) error {
-	ctx, _ := opts.SetLoggerLevel()
 	target, err := opts.NewTarget(opts.Common)
 	if err != nil {
 		return err
@@ -82,6 +81,6 @@ func tagManifest(opts tagOptions) error {
 
 	tagNOpts := oras.DefaultTagNOptions
 	tagNOpts.Concurrency = opts.concurrency
-	_, err = oras.TagN(ctx, display.NewTagManifestStatusPrinter(target), opts.Reference, opts.targetRefs, tagNOpts)
+	_, err = oras.TagN(opts.Context(), display.NewTagManifestStatusPrinter(target), opts.Reference, opts.targetRefs, tagNOpts)
 	return err
 }

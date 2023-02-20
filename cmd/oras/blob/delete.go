@@ -59,7 +59,7 @@ Example - Delete a blob and print its descriptor:
 			if opts.OutputDescriptor && !opts.Force {
 				return errors.New("must apply --force to confirm the deletion if the descriptor is outputted")
 			}
-			return option.Parse(&opts)
+			return option.Parse(&opts, cmd, args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.targetRef = args[0]
@@ -72,7 +72,6 @@ Example - Delete a blob and print its descriptor:
 }
 
 func deleteBlob(opts deleteBlobOptions) (err error) {
-	ctx, _ := opts.SetLoggerLevel()
 	repo, err := opts.NewRepository(opts.targetRef, opts.Common)
 	if err != nil {
 		return err
@@ -83,6 +82,7 @@ func deleteBlob(opts deleteBlobOptions) (err error) {
 	}
 
 	blobs := repo.Blobs()
+	ctx := opts.Context()
 	desc, err := blobs.Resolve(ctx, opts.targetRef)
 	if err != nil {
 		if errors.Is(err, errdef.ErrNotFound) {

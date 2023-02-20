@@ -19,7 +19,6 @@ import (
 	"oras.land/oras/cmd/oras/blob"
 	"oras.land/oras/cmd/oras/manifest"
 	"oras.land/oras/cmd/oras/repository"
-	"oras.land/oras/cmd/oras/tag"
 )
 
 func NewRoot() *cobra.Command {
@@ -35,10 +34,10 @@ func NewRoot() *cobra.Command {
 		versionCmd(),
 		discoverCmd(),
 		copyCmd(),
+		tagCmd(),
 		attachCmd(),
 		blob.Cmd(),
 		manifest.Cmd(),
-		tag.TagCmd(),
 		repository.Cmd(),
 	)
 	return cmd

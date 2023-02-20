@@ -16,13 +16,19 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"os"
+	"os/signal"
 
 	"oras.land/oras/cmd/oras/cmd"
 )
 
 func main() {
-	if err := cmd.NewRoot().Execute(); err != nil {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+	root := cmd.NewRoot()
+	if err := root.ExecuteContext(ctx); err != nil {
+		cancel()
 		os.Exit(1)
 	}
 }
