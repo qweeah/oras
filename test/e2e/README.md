@@ -61,52 +61,98 @@ Describe: <Role>
 ### 8. Adding New Test Data
 
 #### 8.1 Command Suite
-Command suite uses pre-baked test data, which is a bunch of layered archive files compressed from registry storage. Test data are all stored in `$REPO_ROOT/test/e2e/testdata/distribution/` but separated in different sub-folders: oras distribution uses `mount` and upstream distribution uses `mount_fallback`.
+Command suite uses two kinds of pre-baked test data:
+  - Registry storage mount data:
 
-For both registries, the repository name should follow the convention of `command/$repo_suffix`. To add a new layer to the test data, use the below command to compress the `docker` folder from the root directory of the registry storage and copy it to the corresponding subfolder in `$REPO_ROOT/test/e2e/testdata/distribution/mount`.
-```shell
-tar -cvzf ${repo_suffix}.tar.gz --owner=0 --group=0 docker/
-```
+    Test Specs related to remote registries will use a bunch of layered archive files compressed from registry storage. Those test data are all stored in `$REPO_ROOT/test/e2e/testdata/distribution/` but separated in different sub-folders: oras distribution uses `mount` and upstream distribution uses `mount_fallback`.
 
-##### Test Data for ORAS-Distribution
-```mermaid
-graph TD;
-    subgraph "repository: command/images"
-        subgraph "file: images.tar.gz"
-            direction TB
-            A0>tag: multi]-..->A1[oci index]
-            A1--linux/amd64-->A2[oci image]
-            A1--linux/arm64-->A3[oci image]
-            A1--linux/arm/v7-->A4[oci image]
-            A2-->A5(config1)
-            A3-->A6(config2)
-            A4-->A7(config3)
-            A2-- hello.tar -->A8(blob)
-            A3-- hello.tar -->A8(blob)
-            A4-- hello.tar -->A8(blob)
+    For oras distribution, the mounted data looks like below:
+    ```mermaid
+    graph TD;
+        subgraph "repository: command/images"
+            subgraph "file: images.tar.gz"
+                direction TB
+                A0>tag: multi]-..->A1[oci index]
+                A1--linux/amd64-->A2[oci image]
+                A1--linux/arm64-->A3[oci image]
+                A1--linux/arm/v7-->A4[oci image]
+                A2-->A5(config1)
+                A3-->A6(config2)
+                A4-->A7(config3)
+                A2-- hello.tar -->A8(blob)
+                A3-- hello.tar -->A8(blob)
+                A4-- hello.tar -->A8(blob)
 
-            B0>tag: foobar]-..->B1[oci image]
-            B1-- foo1 -->B2(blob1)
-            B1-- foo2 -->B2(blob1)
-            B1-- bar -->B3(blob2)
+                B0>tag: foobar]-..->B1[oci image]
+                B1-- foo1 -->B2(blob1)
+                B1-- foo2 -->B2(blob1)
+                B1-- bar -->B3(blob2)
+            end
         end
-    end
-    
-    subgraph "repository: command/artifacts"
-        subgraph "file: artifacts.tar.gz"
+        
+        subgraph "repository: command/artifacts"
+            subgraph "file: artifacts.tar.gz"
+                direction TB
+                C0>tag: foobar]-..->C1[oci image]
+                
+                direction TB
+                E1["test.sbom.file(artifact)"] -- subject --> C1
+                E2["test.signature.file(artifact)"] -- subject --> E1
+            end
+            subgraph "file: artifacts_fallback.tar.gz"
+                direction TB
+                D1["test.sbom.file(image)"] -- subject --> C1
+                D2["test.signature.file(image)"] -- subject --> D1
+            end
+            subgraph "file: artifacts_index.tar.gz"
+                direction TB
+                F0>tag: multi]-..->F1[oci index]
+                F1--linux/amd64-->F2[oci image]
+                F1--linux/arm64-->F3[oci image]
+                F1--linux/arm/v7-->F4[oci image]
+                G1["referrer.index(image)"] -- subject --> F1
+                G2["referrer.image(image)"] -- subject --> F2
+            end
+        end
+    ```
+    For upstream distribution, the mounted data looks like below:
+    ```mermaid
+    graph TD;
+        subgraph "repository: command/artifacts"
+            subgraph "file: artifacts_fallback.tar.gz"
+                direction TB
+                A0>tag: foobar]-..->A1[oci image]
+                A1-- foo1 -->A2(blob1)
+                A1-- foo2 -->A2(blob1)
+                A1-- bar -->A3(blob2)
+
+                E1["test.sbom.file(image)"] -- subject --> A1
+                E2["test.signature.file(image)"] -- subject --> E1
+            end
+        end
+    ```
+    For both registries, the repository name should follow the convention of `command/$repo_suffix`. To add a new layer to the test data, use the below command to compress the `docker` folder from the root directory of the registry storage and copy it to the corresponding subfolder in `$REPO_ROOT/test/e2e/testdata/distribution/mount`.
+
+    ```shell
+    tar -cvzf ${repo_suffix}.tar.gz --owner=0 --group=0 docker/
+    ```
+  - Image layout:
+
+    Test specs related to image layout will use test data stored in  `$REPO_ROOT/test/e2e/testdata/image_layout/$TYPE`. Currently we only support OCI image layout and the content is organized as below:
+    ```mermaid
+    graph TD;
+        subgraph "folder: $REPO_ROOT/test/e2e/testdata/image_layout/oci"
             direction TB
             C0>tag: foobar]-..->C1[oci image]
             
             direction TB
             E1["test.sbom.file(artifact)"] -- subject --> C1
             E2["test.signature.file(artifact)"] -- subject --> E1
-        end
-        subgraph "file: artifacts_fallback.tar.gz"
+
             direction TB
             D1["test.sbom.file(image)"] -- subject --> C1
             D2["test.signature.file(image)"] -- subject --> D1
-        end
-        subgraph "file: artifacts_index.tar.gz"
+
             direction TB
             F0>tag: multi]-..->F1[oci index]
             F1--linux/amd64-->F2[oci image]
@@ -115,24 +161,8 @@ graph TD;
             G1["referrer.index(image)"] -- subject --> F1
             G2["referrer.image(image)"] -- subject --> F2
         end
-    end
-```
+    ```
+    You may use any registry client with OCI image layout support to add more test data in, including oras :)
 
-##### Test Data for Upstream Distribution
-```mermaid
-graph TD;
-    subgraph "repository: command/artifacts"
-        subgraph "file: artifacts_fallback.tar.gz"
-            direction TB
-            A0>tag: foobar]-..->A1[oci image]
-            A1-- foo1 -->A2(blob1)
-            A1-- foo2 -->A2(blob1)
-            A1-- bar -->A3(blob2)
-
-            E1["test.sbom.file(image)"] -- subject --> A1
-            E2["test.signature.file(image)"] -- subject --> E1
-        end
-    end
-```
 #### 8.2 Scenario Suite
 Test files used by scenario-based specs are placed in `$REPO_ROOT/test/e2e/testdata/files`.
