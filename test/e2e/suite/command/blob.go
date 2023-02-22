@@ -309,7 +309,7 @@ var _ = Describe("OCI image layout users:", Focus, func() {
 			ORAS("blob", "push", LayoutFlag, LayoutRef(tmpRoot, pushDigest), blobPath, "-v").
 				WithDescription("skip pushing if the blob already exists in the target repo").
 				MatchKeyWords("Exists").Exec()
-			// validate: oci-layout store will fail fetching blob if index.json doesn't exist
+			// below will fail and pending for https://github.com/oras-project/oras-go/issues/449
 			// ORAS("blob", "fetch", LayoutFlag, tmpRoot, "--output", "-").MatchContent(pushContent).Exec()
 		})
 
@@ -321,7 +321,7 @@ var _ = Describe("OCI image layout users:", Focus, func() {
 			ORAS("blob", "push", LayoutFlag, LayoutRef(tmpRoot, pushDigest), "-", "--media-type", mediaType, "--descriptor", "--size", strconv.Itoa(len(pushContent))).
 				WithInput(strings.NewReader(pushContent)).
 				MatchContent(fmt.Sprintf(pushDescFmt, mediaType)).Exec()
-			// validate: oci-layout store will fail fetching blob if index.json doesn't exist
+			// below will fail and pending for https://github.com/oras-project/oras-go/issues/449
 			// ORAS("blob", "fetch", LayoutFlag, tmpRoot, "--output", "-").MatchContent(pushContent).Exec()
 		})
 	})
