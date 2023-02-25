@@ -53,4 +53,4 @@ jobs:
       - name: Upload coverage to codecov.io
         uses: codecov/codecov-action@v3
         with:
-          files: ./coverage.txt, test/e2e/coverage.txt
+          files: test/e2e/coverage.txt
