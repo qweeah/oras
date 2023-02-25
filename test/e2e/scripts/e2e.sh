@@ -58,7 +58,15 @@ run_registry \
   $ORAS_REGISTRY_FALLBACK_PORT
 
 echo " === run tests === "
-if ! ginkgo -r -p --succinct suite; then 
+ginkgo -r -p --succinct suite || fail=true
+
+if ! [ -z ${COVERAGE_DUMP_ROOT} ]; then
+  echo " === generating code cov report... === "
+  go tool covdata textfmt -i="${repo_root}/test/e2e/${COVERAGE_DUMP_ROOT}" -o ${repo_root}/test/e2e/coverage.txt || true 
+fi
+
+if [ "${fail}" = 'true' ]; then
+  echo " === retriving registry error logs === "
   echo '-------- oras distribution trace -------------'
   docker logs -t --tail 200 $oras_container_name
   echo '-------- upstream distribution trace -------------'
