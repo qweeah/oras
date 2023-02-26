@@ -87,7 +87,7 @@ func init() {
 			// confirm the existence of dump folder
 			err := os.MkdirAll(CovDumpPath, 0700)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			fmt.Printf("Coverage file dump path: %q", covDumpRoot)
+			fmt.Printf("Coverage file dump path: %q", CovDumpPath)
 		}
 		ORASPath = os.Getenv("ORAS_PATH")
 		if filepath.IsAbs(ORASPath) {
