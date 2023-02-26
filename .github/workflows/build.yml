@@ -52,5 +52,3 @@ jobs:
         run: bin/linux/amd64/oras version
       - name: Upload coverage to codecov.io
         uses: codecov/codecov-action@v3
-        with:
-          files: test/e2e/coverage.txt
