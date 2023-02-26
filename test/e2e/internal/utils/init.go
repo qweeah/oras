@@ -78,7 +78,7 @@ func init() {
 			if filepath.IsAbs(covDumpRoot) {
 				CovDumpPath = covDumpRoot
 			} else if workspacePath := os.Getenv("GITHUB_WORKSPACE"); workspacePath != "" {
-				CovDumpPath = filepath.Join(workspacePath, covDumpRoot)
+				CovDumpPath = filepath.Join(workspacePath, "test/e2e", covDumpRoot)
 			} else {
 				// local debugging
 				CovDumpPath = filepath.Join(pwd, "..", "..", covDumpRoot)
