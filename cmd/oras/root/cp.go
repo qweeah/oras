@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package root
 
 import (
 	"context"
@@ -40,7 +40,7 @@ type copyOptions struct {
 	extraRefs   []string
 }
 
-func copyCmd() *cobra.Command {
+func CopyCmd() *cobra.Command {
 	var opts copyOptions
 	cmd := &cobra.Command{
 		Use:     "cp [flags] <from>{:<tag>|@<digest>} <to>[:<tag>[,<tag>][...]]",

@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package root
 
 import (
 	"context"
@@ -46,7 +46,7 @@ type pullOptions struct {
 	ManifestConfigRef string
 }
 
-func pullCmd() *cobra.Command {
+func PullCmd() *cobra.Command {
 	var opts pullOptions
 	cmd := &cobra.Command{
 		Use:   "pull [flags] <name>{:<tag>|@<digest>}",

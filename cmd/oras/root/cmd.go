@@ -16,13 +16,30 @@ limitations under the License.
 package root
 
 import (
-	"os"
-
-	"oras.land/oras/cmd/oras/root"
+	"github.com/spf13/cobra"
+	"oras.land/oras/cmd/oras/blob"
+	"oras.land/oras/cmd/oras/manifest"
+	"oras.land/oras/cmd/oras/repository"
 )
 
-func main() {
-	if err := root.New().Execute(); err != nil {
-		os.Exit(1)
+func New() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:          "oras [command]",
+		SilenceUsage: true,
 	}
+	cmd.AddCommand(
+		PullCmd(),
+		PushCmd(),
+		LoginCmd(),
+		LogoutCmd(),
+		VersionCmd(),
+		DiscoverCmd(),
+		CopyCmd(),
+		AttachCmd(),
+		blob.Cmd(),
+		manifest.Cmd(),
+		tagCmd(),
+		repository.Cmd(),
+	)
+	return cmd
 }

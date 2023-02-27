@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package root
 
 import (
 	"context"
@@ -48,7 +48,7 @@ type pushOptions struct {
 	concurrency       int
 }
 
-func pushCmd() *cobra.Command {
+func PushCmd() *cobra.Command {
 	var opts pushOptions
 	cmd := &cobra.Command{
 		Use:   "push [flags] <name>[:<tag>[,<tag>][...]] <file>[:<type>] [...]",

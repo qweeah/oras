@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package root
 
 import (
 	"github.com/sirupsen/logrus"
@@ -28,7 +28,7 @@ type logoutOptions struct {
 	configs []string
 }
 
-func logoutCmd() *cobra.Command {
+func LogoutCmd() *cobra.Command {
 	var opts logoutOptions
 	cmd := &cobra.Command{
 		Use:   "logout [flags] <registry>",

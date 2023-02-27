@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package root
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ import (
 	"oras.land/oras/internal/version"
 )
 
-func versionCmd() *cobra.Command {
+func VersionCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Show the oras version information",
