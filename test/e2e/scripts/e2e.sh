@@ -43,22 +43,23 @@ fi
 
 oras_container_name="oras-e2e"
 upstream_container_name="oras-e2e-fallback"
+e2e_root="${repo_root}/test/e2e"
 echo " === preparing oras distribution === "
 run_registry \
-  ${repo_root}/test/e2e/testdata/distribution/mount \
+  ${e2e_root}/testdata/distribution/mount \
   ghcr.io/oras-project/registry:v1.0.0-rc.4 \
   $oras_container_name \
   $ORAS_REGISTRY_PORT
 
 echo " === preparing upstream distribution === "
 run_registry \
-  ${repo_root}/test/e2e/testdata/distribution/mount_fallback \
+  ${e2e_root}/testdata/distribution/mount_fallback \
   registry:2.8.1 \
   $upstream_container_name \
   $ORAS_REGISTRY_FALLBACK_PORT
 
 if ! [ -z ${COVERAGE_DUMP_ROOT} ]; then
-  rm ${repo_root}/test/e2e/${COVERAGE_DUMP_ROOT} -rf
+  rm ${e2e_root}/${COVERAGE_DUMP_ROOT} -rf
 fi
 
 echo " === run tests === "
@@ -67,16 +68,14 @@ ginkgo -r -p --succinct suite || fail=true
 if ! [ -z ${COVERAGE_DUMP_ROOT} ]; then
   set -x
   echo " === generating code cov report === "
-  cov_path="${repo_root}/test/e2e/coverage.txt"
-  ls -al "${repo_root}/test/e2e/${COVERAGE_DUMP_ROOT}"
-  go tool covdata textfmt -i="${repo_root}/test/e2e/${COVERAGE_DUMP_ROOT}" -o $cov_path || true
-  echo "---1---"
-  cat $cov_path
+  ls -al "${e2e_root}/${COVERAGE_DUMP_ROOT}"
+  go tool covdata textfmt -i="${e2e_root}/${COVERAGE_DUMP_ROOT}" -o ${e2e_root}/.tmp || true
+  cat ${e2e_root}/.tmp
   echo "---2---"
-  wc $cov_path -c
+  wc ${e2e_root}/.tmp
   echo "---3---"
-  cat $cov_path | sed "s/mode\:\ set/mode\:\ atomic/" > $cov_path
-  cat $cov_path
+  sed 's/mode: set/mode: atomic/' ${e2e_root}/.tmp > ${e2e_root}/coverage.txt
+  cat ${e2e_root}/coverage.txt
   set +x
 fi
 
