@@ -68,6 +68,7 @@ if ! [ -z ${COVERAGE_DUMP_ROOT} ]; then
   set -x
   echo " === generating code cov report === "
   cov_path="${repo_root}/test/e2e/coverage.txt"
+  ls -al "${repo_root}/test/e2e/${COVERAGE_DUMP_ROOT}"
   (go tool covdata textfmt -i="${repo_root}/test/e2e/${COVERAGE_DUMP_ROOT}" -o $cov_path && cat $cov_path | tee /dev/stdout | sed "s/mode: set/mode: atomic/" | tee $cov_path) || true
   set +x
 fi
