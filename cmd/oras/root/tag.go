@@ -30,7 +30,7 @@ type tagOptions struct {
 	targetRefs  []string
 }
 
-func tagCmd() *cobra.Command {
+func TagCmd() *cobra.Command {
 	var opts tagOptions
 	cmd := &cobra.Command{
 		Use:   "tag [flags] <name>{:<tag>|@<digest>} <new_tag> [...]",
