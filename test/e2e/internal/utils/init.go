@@ -102,7 +102,7 @@ func init() {
 			// fallback to native build to facilitate local debugging
 			buildArgs := []string{}
 			if CovDumpPath != "" {
-				buildArgs = append(buildArgs, "-cover", "-coverpkg", "cmd")
+				buildArgs = append(buildArgs, "-cover", "-coverpkg", "all")
 			}
 			ORASPath, err = gexec.Build("oras.land/oras/cmd/oras", buildArgs...)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
