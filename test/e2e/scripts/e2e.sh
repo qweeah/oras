@@ -61,9 +61,11 @@ echo " === run tests === "
 ginkgo -r -p --succinct suite || fail=true
 
 if ! [ -z ${COVERAGE_DUMP_ROOT} ]; then
+  set -x
   echo " === generating code cov report === "
   cov_path="${repo_root}/test/e2e/coverage.txt"
-  (go tool covdata textfmt -i="${repo_root}/test/e2e/${COVERAGE_DUMP_ROOT}" -o $cov_path && cat $cov_path | sed 's/set/atomic/' > $cov_path) || true
+  go tool covdata textfmt -i="${repo_root}/test/e2e/${COVERAGE_DUMP_ROOT}" -o $cov_path || true
+  set +x
 fi
 
 if [ "${fail}" = 'true' ]; then
