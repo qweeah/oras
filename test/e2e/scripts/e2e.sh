@@ -70,7 +70,7 @@ if ! [ -z ${COVERAGE_DUMP_ROOT} ]; then
   cov_path="${repo_root}/test/e2e/coverage.txt"
   ls -al "${repo_root}/test/e2e/${COVERAGE_DUMP_ROOT}"
   go tool covdata textfmt -i="${repo_root}/test/e2e/${COVERAGE_DUMP_ROOT}" -o $cov_path || true
-  cat $cov_path | sed "s/mode: set/mode: atomic/" > $cov_path
+  cat $cov_path | sed "s/mode\:\ set/mode\:\ atomic/" > $cov_path
   cat $cov_path
   set +x
 fi
