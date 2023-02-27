@@ -17,9 +17,9 @@ package root
 
 import (
 	"github.com/spf13/cobra"
-	"oras.land/oras/cmd/oras/blob"
-	"oras.land/oras/cmd/oras/manifest"
-	"oras.land/oras/cmd/oras/repository"
+	"oras.land/oras/cmd/oras/root/blob"
+	"oras.land/oras/cmd/oras/root/manifest"
+	"oras.land/oras/cmd/oras/root/repository"
 )
 
 func New() *cobra.Command {
@@ -38,7 +38,7 @@ func New() *cobra.Command {
 		AttachCmd(),
 		blob.Cmd(),
 		manifest.Cmd(),
-		tagCmd(),
+		TagCmd(),
 		repository.Cmd(),
 	)
 	return cmd

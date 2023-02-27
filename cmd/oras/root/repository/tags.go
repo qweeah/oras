@@ -66,7 +66,7 @@ Example - Show tags associated with a digest:
 		Aliases: []string{"show-tags"},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			opts.RawReference = args[0]
-			return option.Parse(&opts)
+			return option.Parse(&opts, cmd, args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return showTags(opts)
@@ -79,12 +79,12 @@ Example - Show tags associated with a digest:
 }
 
 func showTags(opts showTagsOptions) error {
-	ctx, logger := opts.SetLoggerLevel()
-	finder, err := opts.NewReadonlyTarget(ctx, opts.Common)
+	finder, err := opts.NewReadonlyTarget(opts.Common)
 	if err != nil {
 		return err
 	}
 	filter := ""
+	ctx := opts.Context()
 	if opts.Reference != "" {
 		_, err := digest.Parse(opts.Reference)
 		if err == nil {
@@ -96,9 +96,9 @@ func showTags(opts showTagsOptions) error {
 			}
 			filter = desc.Digest.String()
 		}
-		logger.Infof("[Preview] Querying tags associated to %s, it may take a while.\n", filter)
+		opts.Logger.Infof("[Preview] Querying tags associated to %s, it may take a while.\n", filter)
 	}
-	return finder.Tags(ctx, opts.last, func(tags []string) error {
+	return finder.Tags(opts.Context(), opts.last, func(tags []string) error {
 		for _, tag := range tags {
 			if opts.excludeDigestTag && isDigestTag(tag) {
 				continue

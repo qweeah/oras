@@ -58,7 +58,7 @@ Example - Tag the manifest 'v1.0.1' to 'v1.0.2' in an OCI layout folder 'layout-
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			opts.RawReference = args[0]
 			opts.targetRefs = args[1:]
-			return option.Parse(&opts)
+			return option.Parse(&opts, cmd, args)
 		},
 		RunE: func(_ *cobra.Command, args []string) error {
 			return tagManifest(opts)
@@ -71,7 +71,6 @@ Example - Tag the manifest 'v1.0.1' to 'v1.0.2' in an OCI layout folder 'layout-
 }
 
 func tagManifest(opts tagOptions) error {
-	ctx, _ := opts.SetLoggerLevel()
 	target, err := opts.NewTarget(opts.Common)
 	if err != nil {
 		return err
@@ -82,6 +81,6 @@ func tagManifest(opts tagOptions) error {
 
 	tagNOpts := oras.DefaultTagNOptions
 	tagNOpts.Concurrency = opts.concurrency
-	_, err = oras.TagN(ctx, display.NewTagManifestStatusPrinter(target), opts.Reference, opts.targetRefs, tagNOpts)
+	_, err = oras.TagN(opts.Context(), display.NewTagManifestStatusPrinter(target), opts.Reference, opts.targetRefs, tagNOpts)
 	return err
 }

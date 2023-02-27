@@ -112,7 +112,7 @@ Example - Push file "hi.txt" into an OCI layout folder 'layout-dir' with tag 'te
 					return errors.New("cannot build an OCI artifact with manifest config")
 				}
 			}
-			return option.Parse(&opts)
+			return option.Parse(&opts, cmd, args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runPush(opts)
@@ -127,7 +127,6 @@ Example - Push file "hi.txt" into an OCI layout folder 'layout-dir' with tag 'te
 }
 
 func runPush(opts pushOptions) error {
-	ctx, _ := opts.SetLoggerLevel()
 	annotations, err := opts.LoadManifestAnnotations()
 	if err != nil {
 		return err
@@ -143,6 +142,7 @@ func runPush(opts pushOptions) error {
 		return err
 	}
 	defer store.Close()
+	ctx := opts.Context()
 	store.AllowPathTraversalOnWrite = opts.PathValidationDisabled
 	if opts.manifestConfigRef != "" {
 		path, cfgMediaType, err := fileref.Parse(opts.manifestConfigRef, oras.MediaTypeUnknownConfig)

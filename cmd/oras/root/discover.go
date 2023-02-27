@@ -76,7 +76,7 @@ Example - Discover referrers of the manifest tagged 'v1' in an OCI layout folder
 		Args: cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			opts.RawReference = args[0]
-			return option.Parse(&opts)
+			return option.Parse(&opts, cmd, args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runDiscover(opts)
@@ -91,8 +91,8 @@ Example - Discover referrers of the manifest tagged 'v1' in an OCI layout folder
 }
 
 func runDiscover(opts discoverOptions) error {
-	ctx, _ := opts.SetLoggerLevel()
-	repo, err := opts.NewReadonlyTarget(ctx, opts.Common)
+	ctx := opts.Context()
+	repo, err := opts.NewReadonlyTarget(opts.Common)
 	if err != nil {
 		return err
 	}

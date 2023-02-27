@@ -27,6 +27,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
@@ -107,14 +108,14 @@ func (opts *Remote) ApplyFlagsWithPrefix(fs *pflag.FlagSet, prefix, description 
 }
 
 // Parse tries to read password with optional cmd prompt.
-func (opts *Remote) Parse() error {
+func (opts *Remote) Parse(cmd *cobra.Command, args []string) error {
 	if err := opts.parseCustomHeaders(); err != nil {
 		return err
 	}
 	if err := opts.readPassword(); err != nil {
 		return err
 	}
-	return opts.distributionSpec.Parse()
+	return opts.distributionSpec.Parse(cmd, args)
 }
 
 // readPassword tries to read password with optional cmd prompt.
@@ -287,7 +288,7 @@ func (opts *Remote) NewRegistry(hostname string, common Common) (reg *remote.Reg
 	}
 	hostname = reg.Reference.Registry
 	reg.PlainHTTP = opts.isPlainHttp(hostname)
-	if reg.Client, err = opts.authClient(hostname, common.Debug); err != nil {
+	if reg.Client, err = opts.authClient(hostname, common.debugFlag); err != nil {
 		return nil, err
 	}
 	return
@@ -301,7 +302,7 @@ func (opts *Remote) NewRepository(reference string, common Common) (repo *remote
 	}
 	hostname := repo.Reference.Registry
 	repo.PlainHTTP = opts.isPlainHttp(hostname)
-	if repo.Client, err = opts.authClient(hostname, common.Debug); err != nil {
+	if repo.Client, err = opts.authClient(hostname, common.debugFlag); err != nil {
 		return nil, err
 	}
 	if opts.distributionSpec.referrersAPI != nil {

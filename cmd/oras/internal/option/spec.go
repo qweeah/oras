@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -32,7 +33,7 @@ type ImageSpec struct {
 }
 
 // Parse parses flags into the option.
-func (opts *ImageSpec) Parse() error {
+func (opts *ImageSpec) Parse(_ *cobra.Command, _ []string) error {
 	switch opts.specFlag {
 	case "":
 		opts.ManifestMediaType = ""
@@ -62,7 +63,7 @@ type distributionSpec struct {
 }
 
 // Parse parses flags into the option.
-func (opts *distributionSpec) Parse() error {
+func (opts *distributionSpec) Parse(_ *cobra.Command, _ []string) error {
 	switch opts.specFlag {
 	case "":
 		opts.referrersAPI = nil

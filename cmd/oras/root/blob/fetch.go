@@ -77,7 +77,7 @@ Example - Fetch and print a blob from OCI image layout archive file 'layout.tar'
 				return errors.New("`--output -` cannot be used with `--descriptor` at the same time")
 			}
 			opts.RawReference = args[0]
-			return option.Parse(&opts)
+			return option.Parse(&opts, cmd, args)
 		},
 		Aliases: []string{"get"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -91,9 +91,8 @@ Example - Fetch and print a blob from OCI image layout archive file 'layout.tar'
 }
 
 func fetchBlob(opts fetchBlobOptions) (fetchErr error) {
-	ctx, _ := opts.SetLoggerLevel()
 	var target oras.ReadOnlyTarget
-	target, err := opts.NewReadonlyTarget(ctx, opts.Common)
+	target, err := opts.NewReadonlyTarget(opts.Common)
 	if err != nil {
 		return err
 	}
@@ -111,6 +110,7 @@ func fetchBlob(opts fetchBlobOptions) (fetchErr error) {
 	}
 
 	var desc ocispec.Descriptor
+	ctx := opts.Context()
 	if opts.outputPath == "" {
 		// fetch blob descriptor only
 		desc, err = oras.Resolve(ctx, src, opts.Reference, oras.DefaultResolveOptions)

@@ -84,7 +84,7 @@ Example - Copy an artifact with multiple tags with concurrency tuned:
 			refs := strings.Split(args[1], ",")
 			opts.To.RawReference = refs[0]
 			opts.extraRefs = refs[1:]
-			return option.Parse(&opts)
+			return option.Parse(&opts, cmd, args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runCopy(opts)
@@ -98,10 +98,10 @@ Example - Copy an artifact with multiple tags with concurrency tuned:
 }
 
 func runCopy(opts copyOptions) error {
-	ctx, _ := opts.SetLoggerLevel()
+	ctx := opts.Context()
 
 	// Prepare source
-	src, err := opts.From.NewReadonlyTarget(ctx, opts.Common)
+	src, err := opts.From.NewReadonlyTarget(opts.Common)
 	if err != nil {
 		return err
 	}

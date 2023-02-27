@@ -75,7 +75,7 @@ Example - Fetch and print the prettified descriptor of the config:
 				return errors.New("`--output -` cannot be used with `--descriptor` at the same time")
 			}
 			opts.RawReference = args[0]
-			return option.Parse(&opts)
+			return option.Parse(&opts, cmd, args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return fetchConfig(opts)
@@ -88,9 +88,7 @@ Example - Fetch and print the prettified descriptor of the config:
 }
 
 func fetchConfig(opts fetchConfigOptions) (fetchErr error) {
-	ctx, _ := opts.SetLoggerLevel()
-
-	repo, err := opts.NewReadonlyTarget(ctx, opts.Common)
+	repo, err := opts.NewReadonlyTarget(opts.Common)
 	if err != nil {
 		return err
 	}
@@ -103,6 +101,7 @@ func fetchConfig(opts fetchConfigOptions) (fetchErr error) {
 	}
 
 	// fetch config descriptor
+	ctx := opts.Context()
 	configDesc, err := fetchConfigDesc(ctx, src, opts.Reference, opts.Platform.Platform)
 	if err != nil {
 		return err

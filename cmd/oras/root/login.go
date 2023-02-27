@@ -61,7 +61,7 @@ Example - Log in with username and password in an interactive terminal and no TL
 `,
 		Args: cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return option.Parse(&opts)
+			return option.Parse(&opts, cmd, args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Hostname = args[0]
@@ -73,7 +73,6 @@ Example - Log in with username and password in an interactive terminal and no TL
 }
 
 func runLogin(opts loginOptions) (err error) {
-	ctx, _ := opts.SetLoggerLevel()
 
 	// prompt for credential
 	if opts.Password == "" {
@@ -107,7 +106,7 @@ func runLogin(opts loginOptions) (err error) {
 	if err != nil {
 		return err
 	}
-	if err = remote.Ping(ctx); err != nil {
+	if err = remote.Ping(opts.Context()); err != nil {
 		return err
 	}
 

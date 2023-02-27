@@ -91,7 +91,7 @@ Example - Push a manifest to an OCI layout folder 'layout-dir' and tag with 'v1'
 			opts.RawReference = refs[0]
 			opts.extraRefs = refs[1:]
 			opts.fileRef = args[1]
-			return option.Parse(&opts)
+			return option.Parse(&opts, cmd, args)
 		},
 		RunE: func(_ *cobra.Command, args []string) error {
 			return pushManifest(opts)
@@ -106,7 +106,6 @@ Example - Push a manifest to an OCI layout folder 'layout-dir' and tag with 'v1'
 }
 
 func pushManifest(opts pushOptions) error {
-	ctx, _ := opts.SetLoggerLevel()
 	var target oras.Target
 	var err error
 	target, err = opts.NewTarget(opts.Common)
@@ -139,6 +138,7 @@ func pushManifest(opts pushOptions) error {
 	if ref == "" {
 		ref = desc.Digest.String()
 	}
+	ctx := opts.Context()
 	match, err := matchDigest(ctx, target, ref, desc.Digest)
 	if err != nil {
 		return err

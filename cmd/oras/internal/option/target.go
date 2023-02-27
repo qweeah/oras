@@ -16,11 +16,11 @@ limitations under the License.
 package option
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/oci"
@@ -82,14 +82,14 @@ func (opts *Target) ApplyFlagsWithPrefix(fs *pflag.FlagSet, prefix, description 
 }
 
 // Parse gets target options from user input.
-func (opts *Target) Parse() error {
+func (opts *Target) Parse(cmd *cobra.Command, args []string) error {
 	switch {
 	case opts.isOCILayout:
 		opts.Type = TargetTypeOCILayout
 		return nil
 	default:
 		opts.Type = TargetTypeRemote
-		return opts.Remote.Parse()
+		return opts.Remote.Parse(cmd, args)
 	}
 }
 
@@ -138,7 +138,7 @@ type ReadOnlyGraphTagFinderTarget interface {
 }
 
 // NewReadonlyTargets generates a new read only target based on opts.
-func (opts *Target) NewReadonlyTarget(ctx context.Context, common Common) (ReadOnlyGraphTagFinderTarget, error) {
+func (opts *Target) NewReadonlyTarget(common Common) (ReadOnlyGraphTagFinderTarget, error) {
 	switch opts.Type {
 	case TargetTypeOCILayout:
 		var err error
@@ -151,9 +151,9 @@ func (opts *Target) NewReadonlyTarget(ctx context.Context, common Common) (ReadO
 			return nil, err
 		}
 		if info.IsDir() {
-			return oci.NewFromFS(ctx, os.DirFS(opts.Path))
+			return oci.NewFromFS(common.Context(), os.DirFS(opts.Path))
 		}
-		return oci.NewFromTar(ctx, opts.Path)
+		return oci.NewFromTar(common.Context(), opts.Path)
 	case TargetTypeRemote:
 		repo, err := opts.NewRepository(opts.RawReference, common)
 		if err != nil {
@@ -196,6 +196,6 @@ func (opts *BinaryTarget) ApplyFlags(fs *pflag.FlagSet) {
 }
 
 // Parse parses user-provided flags and arguments into option struct.
-func (opts *BinaryTarget) Parse() error {
-	return Parse(opts)
+func (opts *BinaryTarget) Parse(cmd *cobra.Command, args []string) error {
+	return Parse(opts, cmd, args)
 }
