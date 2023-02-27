@@ -16,6 +16,3 @@ coverage:
     project:
       default:
         target: 60%
-
-ignore:
-  - "cmd/oras/root/**/*"
