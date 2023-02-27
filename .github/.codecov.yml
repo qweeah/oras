@@ -16,5 +16,3 @@ coverage:
     project:
       default:
         target: 60%
-uses:
-  files: test/e2e/coverage.txt
