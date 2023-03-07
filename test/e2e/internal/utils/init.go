@@ -87,7 +87,7 @@ func init() {
 			// confirm the existence of dump folder
 			err := os.MkdirAll(CovDumpPath, 0700)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			fmt.Printf("Coverage file dump path: %q", CovDumpPath)
+			fmt.Printf("Coverage file dump path: %q\n", CovDumpPath)
 		}
 		ORASPath = os.Getenv("ORAS_PATH")
 		if filepath.IsAbs(ORASPath) {
@@ -102,7 +102,7 @@ func init() {
 			// fallback to native build to facilitate local debugging
 			buildArgs := []string{}
 			if CovDumpPath != "" {
-				buildArgs = append(buildArgs, "-cover", "-coverpkg", "cmd")
+				buildArgs = append(buildArgs, "-cover", "-coverpkg", "oras.lang/oras")
 			}
 			ORASPath, err = gexec.Build("oras.land/oras/cmd/oras", buildArgs...)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
