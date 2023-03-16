@@ -74,7 +74,7 @@ if ! [ -z ${COVERAGE_DUMP_ROOT} ]; then
   # echo "---2---"
   wc ${e2e_root}/.tmp
   # echo "---3---"
-  sed 's/mode: set/mode: atomic/' ${e2e_root}/.tmp > ${e2e_root}/coverage.txt
+  sed 's/mode: set/mode: count/' ${e2e_root}/.tmp > ${e2e_root}/coverage.txt
   cat ${e2e_root}/coverage.txt
 fi
 
