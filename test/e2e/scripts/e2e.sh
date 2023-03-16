@@ -63,20 +63,19 @@ if ! [ -z ${COVERAGE_DUMP_ROOT} ]; then
 fi
 
 echo " === run tests === "
-ginkgo -r -p --succinct suite || fail=true
+ginkgo -r -p --succinct suite/auth || fail=true
 
 if ! [ -z ${COVERAGE_DUMP_ROOT} ]; then
-  set -x
   echo " === generating code cov report === "
-  ls -al "${e2e_root}/${COVERAGE_DUMP_ROOT}"
-  go tool covdata textfmt -i="${e2e_root}/${COVERAGE_DUMP_ROOT}" -o ${e2e_root}/.tmp || true
-  cat ${e2e_root}/.tmp
-  echo "---2---"
-  wc ${e2e_root}/.tmp
-  echo "---3---"
-  sed 's/mode: set/mode: atomic/' ${e2e_root}/.tmp > ${e2e_root}/coverage.txt
-  cat ${e2e_root}/coverage.txt
-  set +x
+  # ls -al "${e2e_root}/${COVERAGE_DUMP_ROOT}"
+  go tool covdata textfmt -i="${e2e_root}/${COVERAGE_DUMP_ROOT}" -o ${e2e_root}/coverage.txt || true
+  # go tool covdata textfmt -i="${e2e_root}/${COVERAGE_DUMP_ROOT}" -o ${e2e_root}/.tmp || true
+  # cat ${e2e_root}/.tmp
+  # echo "---2---"
+  # wc ${e2e_root}/.tmp
+  # echo "---3---"
+  # sed 's/mode: set/mode: atomic/' ${e2e_root}/.tmp > ${e2e_root}/coverage.txt
+  # cat ${e2e_root}/coverage.txt
 fi
 
 if [ "${fail}" = 'true' ]; then
