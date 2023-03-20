@@ -130,7 +130,7 @@ func TestReferrers(t *testing.T) {
 	imageDesc.Annotations = anno
 	imageDesc.ArtifactType = imageType
 	artifactType := "test.artifact"
-	generateArtifact(artifactType, &descs[subject], anno)
+	generateArtifact(artifactType, &descs[subject], anno, descs[blob])
 	generateIndex(descs[subject])
 	artifactDesc := descs[artifact]
 	artifactDesc.Annotations = anno
