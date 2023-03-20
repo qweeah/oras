@@ -159,6 +159,7 @@ func TestReferrers(t *testing.T) {
 		{"should return referrers when target is a referrer lister", args{ctx, &refLister{referrers: referrers}, ocispec.Descriptor{}, ""}, referrers, false},
 		{"should return nil for index node", args{ctx, finder, descs[index], ""}, nil, false},
 		{"should return nil for config node", args{ctx, finder, descs[imgConfig], ""}, nil, false},
+		{"should return nil for blob/layer node", args{ctx, finder, descs[blob], ""}, nil, false},
 		{"should find filtered image referrer", args{ctx, finder, descs[subject], imageType}, []ocispec.Descriptor{imageDesc}, false},
 		{"should find filtered artifact referrer", args{ctx, finder, descs[subject], artifactType}, []ocispec.Descriptor{artifactDesc}, false},
 	}
