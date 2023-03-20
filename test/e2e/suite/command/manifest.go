@@ -141,6 +141,12 @@ var _ = Describe("ORAS beginners:", func() {
 				prepare(RegistryRef(Host, ImageRepo, foobar.Tag), RegistryRef(Host, dstRepo, tempTag))
 				ORAS("manifest", "delete").ExpectFailure().Exec()
 			})
+
+			It("should fail if no digest provided", func() {
+				dstRepo := fmt.Sprintf(repoFmt, "delete", "no-reference")
+				prepare(RegistryRef(Host, ImageRepo, foobar.Tag), RegistryRef(Host, dstRepo, ""))
+				ORAS("manifest", "delete").ExpectFailure().MatchErrKeyWords("name@digest").Exec()
+			})
 		})
 		When("running `manifest fetch-config`", func() {
 			It("should show preview hint in the doc", func() {
