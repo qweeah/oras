@@ -113,6 +113,12 @@ var _ = Describe("Common registry users:", func() {
 				Exec()
 		})
 
+		It("should discover all referrers of a subject via referrers API", func() {
+			ORAS("discover", subjectRef, "-o", format, "--distribution-spec", "v1.1-referrers-api").
+				MatchKeyWords(append(discoverKeyWords(false, referrers...), RegistryRef(Host, ArtifactRepo, foobar.Digest))...).
+				Exec()
+		})
+
 		It("should discover all referrers of a subject with annotations", func() {
 			ORAS("discover", subjectRef, "-o", format, "-v").
 				MatchKeyWords(append(discoverKeyWords(true, referrers...), RegistryRef(Host, ArtifactRepo, foobar.Digest))...).
