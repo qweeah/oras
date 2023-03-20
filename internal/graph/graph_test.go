@@ -113,7 +113,8 @@ func TestReferrers(t *testing.T) {
 		appendBlob(ocispec.MediaTypeImageIndex, manifestJSON)
 	}
 	const (
-		subject = iota
+		subjectBlob = iota
+		subject
 		imgConfig
 		image
 		artifact
@@ -121,6 +122,7 @@ func TestReferrers(t *testing.T) {
 	)
 	anno := map[string]string{"test": "foo"}
 	appendBlob(ocispec.MediaTypeArtifactManifest, []byte("subject content"))
+	generateArtifact("subject.manifest", nil, anno, descs[subjectBlob])
 	imageType := "test.image"
 	appendBlob(imageType, []byte("config content"))
 	generateImage(&descs[subject], anno, descs[imgConfig])
