@@ -136,7 +136,7 @@ var _ = Describe("ORAS beginners:", func() {
 					Exec()
 			})
 
-			It("should fail if no blob reference provided", func() {
+			It("should fail if no manifest reference provided", func() {
 				dstRepo := fmt.Sprintf(repoFmt, "delete", "no-reference")
 				prepare(RegistryRef(Host, ImageRepo, foobar.Tag), RegistryRef(Host, dstRepo, tempTag))
 				ORAS("manifest", "delete").ExpectFailure().Exec()
@@ -145,7 +145,7 @@ var _ = Describe("ORAS beginners:", func() {
 			It("should fail if no digest provided", func() {
 				dstRepo := fmt.Sprintf(repoFmt, "delete", "no-reference")
 				prepare(RegistryRef(Host, ImageRepo, foobar.Tag), RegistryRef(Host, dstRepo, ""))
-				ORAS("manifest", "delete").ExpectFailure().MatchErrKeyWords("name@digest").Exec()
+				ORAS("manifest", "delete", RegistryRef(Host, dstRepo, "")).ExpectFailure().MatchErrKeyWords("name@digest").Exec()
 			})
 		})
 		When("running `manifest fetch-config`", func() {
