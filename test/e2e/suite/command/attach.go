@@ -55,9 +55,21 @@ var _ = Describe("ORAS beginners:", func() {
 				ExpectFailure().MatchErrKeyWords("Error: no blob or manifest annotation are provided").Exec()
 		})
 
+		It("should fail if provide invalid image spec flag", Focus, func() {
+			flag := "???"
+			ORAS("attach", "--artifact-type", "oras.test", RegistryRef(Host, ImageRepo, foobar.Tag), "--image-spec", flag).
+				ExpectFailure().MatchErrKeyWords("Error:", "unknown image specification flag", flag).Exec()
+		})
+
+		It("should fail if provide invalid distribution spec flag", Focus, func() {
+			flag := "???"
+			ORAS("attach", "--artifact-type", "oras.test", RegistryRef(Host, ImageRepo, foobar.Tag), "--distribution-spec", flag).
+				ExpectFailure().MatchErrKeyWords("Error:", "unknown distribution specification flag", flag).Exec()
+		})
+
 		It("should fail if no file reference or manifest annotation provided for OCI layout", func() {
 			root := GinkgoT().TempDir()
-			ORAS("attach", "--artifact-type", "oras.test", LayoutRef(root, foobar.Tag)).
+			ORAS("attach", "--artifact-type", "oras.test", Flags.Layout, LayoutRef(root, foobar.Tag)).
 				ExpectFailure().MatchErrKeyWords("Error: no blob or manifest annotation are provided").Exec()
 		})
 	})
