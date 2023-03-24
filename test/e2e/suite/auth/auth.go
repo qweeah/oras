@@ -57,11 +57,33 @@ var _ = Describe("Common registry user", Ordered, func() {
 				MatchErrKeyWords("WARNING", "Using --password via the CLI is insecure", "Use --password-stdin").Exec()
 		})
 
+		It("should fail if no username input", func() {
+			ORAS("login", Host, "--registry-config", AuthConfigPath).
+				WithTimeOut(20 * time.Second).
+				WithInput(strings.NewReader("")).
+				MatchKeyWords("Username:").
+				ExpectFailure().
+				Exec()
+		})
+
+		It("should fail if no password input", func() {
+			ORAS("login", Host, "--registry-config", AuthConfigPath).
+				WithTimeOut(20*time.Second).
+				MatchKeyWords("Username: ", "Password: ").
+				WithInput(strings.NewReader(fmt.Sprintf("%s\n", Username))).ExpectFailure().Exec()
+		})
+		It("should fail if no token input", func() {
+			ORAS("login", Host, "--registry-config", AuthConfigPath).
+				WithTimeOut(20*time.Second).
+				MatchKeyWords("Username: ", "Token: ").
+				WithInput(strings.NewReader("\n")).ExpectFailure().Exec()
+		})
+
 		It("should use prompted input", func() {
 			ORAS("login", Host, "--registry-config", AuthConfigPath).
 				WithTimeOut(20*time.Second).
 				WithInput(strings.NewReader(fmt.Sprintf("%s\n%s\n", Username, Password))).
-				MatchKeyWords("Username:", "Password:", "Login Succeeded\n").Exec()
+				MatchKeyWords("Username: ", "Password: ", "Login Succeeded\n").Exec()
 		})
 	})
 })
