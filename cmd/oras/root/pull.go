@@ -28,6 +28,7 @@ import (
 	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/content/file"
 	"oras.land/oras/cmd/oras/internal/display"
+	"oras.land/oras/cmd/oras/internal/display/track"
 	"oras.land/oras/cmd/oras/internal/fileref"
 	"oras.land/oras/cmd/oras/internal/option"
 	"oras.land/oras/internal/graph"
@@ -38,6 +39,7 @@ type pullOptions struct {
 	option.Common
 	option.Platform
 	option.Target
+	option.TTY
 
 	concurrency       int
 	KeepOldFiles      bool
@@ -121,8 +123,8 @@ func runPull(ctx context.Context, opts pullOptions) error {
 	}
 	var getConfigOnce sync.Once
 	copyOptions.FindSuccessors = func(ctx context.Context, fetcher content.Fetcher, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
-		statusFetcher := content.FetcherFunc(func(ctx context.Context, target ocispec.Descriptor) (fetched io.ReadCloser, fetchErr error) {
-			if _, ok := printed.LoadOrStore(generateContentKey(target), true); ok {
+		successorFetcher := content.FetcherFunc(func(ctx context.Context, target ocispec.Descriptor) (fetched io.ReadCloser, fetchErr error) {
+			if _, ok := printed.LoadOrStore(generateContentKey(target), true); ok || opts.IsTTY {
 				return fetcher.Fetch(ctx, target)
 			}
 
@@ -142,7 +144,7 @@ func runPull(ctx context.Context, opts pullOptions) error {
 			return rc, display.PrintStatus(target, "Processing ", opts.Verbose)
 		})
 
-		nodes, subject, config, err := graph.Successors(ctx, statusFetcher, desc)
+		nodes, subject, config, err := graph.Successors(ctx, successorFetcher, desc)
 		if err != nil {
 			return nil, err
 		}
@@ -203,7 +205,7 @@ func runPull(ctx context.Context, opts pullOptions) error {
 
 	pulledEmpty := true
 	copyOptions.PreCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
-		if _, ok := printed.LoadOrStore(generateContentKey(desc), true); ok {
+		if _, ok := printed.LoadOrStore(generateContentKey(desc), true); ok || opts.IsTTY {
 			return nil
 		}
 		return display.PrintStatus(desc, "Downloading", opts.Verbose)
@@ -232,11 +234,14 @@ func runPull(ctx context.Context, opts pullOptions) error {
 			pulledEmpty = false
 		}
 		printed.Store(generateContentKey(desc), true)
+		if opts.IsTTY {
+			return nil
+		}
 		return display.Print("Downloaded ", display.ShortDigest(desc), name)
 	}
 
 	// Copy
-	desc, err := oras.Copy(ctx, src, opts.Reference, dst, opts.Reference, copyOptions)
+	desc, err := doPull(ctx, opts.IsTTY, src, dst, opts.Reference, copyOptions)
 	if err != nil {
 		if errors.Is(err, file.ErrPathTraversalDisallowed) {
 			err = fmt.Errorf("%s: %w", "use flag --allow-path-traversal to allow insecurely pulling files outside of working directory", err)
@@ -249,6 +254,19 @@ func runPull(ctx context.Context, opts pullOptions) error {
 	fmt.Println("Pulled", opts.AnnotatedReference())
 	fmt.Println("Digest:", desc.Digest)
 	return nil
+}
+
+func doPull(ctx context.Context, isTTY bool, src oras.ReadOnlyTarget, dst oras.GraphTarget, reference string, opts oras.CopyOptions) (ocispec.Descriptor, error) {
+	if isTTY {
+		tracked, err := track.NewTarget(dst, copying, copied)
+		if err != nil {
+			return ocispec.Descriptor{}, err
+		}
+		defer tracked.Stop()
+		display.Trackable = tracked
+		dst = tracked
+	}
+	return oras.Copy(ctx, src, reference, dst, reference, opts)
 }
 
 // generateContentKey generates a unique key for each content descriptor, using
