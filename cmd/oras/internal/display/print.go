@@ -25,9 +25,45 @@ import (
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/registry"
+	"oras.land/oras/cmd/oras/internal/display/track"
 )
 
 var printLock sync.Mutex
+
+// TODO: use another way to opt in TTY printing
+var Trackable track.Trackable
+
+// PrintStatus prints transfer status.
+func PrintStatus(desc ocispec.Descriptor, status string, verbose bool) error {
+	name, ok := desc.Annotations[ocispec.AnnotationTitle]
+	if !ok {
+		// no status for unnamed content
+		if !verbose {
+			return nil
+		}
+		name = desc.MediaType
+	}
+	if Trackable != nil {
+		Trackable.Prompt(desc, status)
+		return nil
+	}
+	return Print(status, ShortDigest(desc), name)
+}
+
+func PadPrompts(prompts ...*string) {
+	maxLen := 0
+	for _, prompt := range prompts {
+		if len(*prompt) > maxLen {
+			maxLen = len(*prompt)
+		}
+	}
+
+	for i := range prompts {
+		// pad prompt with spaces to reach maxLen
+		tmp := fmt.Sprintf("%-*s", maxLen, *prompts[i])
+		*prompts[i] = tmp
+	}
+}
 
 // Print objects to display concurrent-safely
 func Print(a ...any) error {
@@ -42,19 +78,6 @@ func StatusPrinter(status string, verbose bool) func(context.Context, ocispec.De
 	return func(ctx context.Context, desc ocispec.Descriptor) error {
 		return PrintStatus(desc, status, verbose)
 	}
-}
-
-// PrintStatus prints transfer status.
-func PrintStatus(desc ocispec.Descriptor, status string, verbose bool) error {
-	name, ok := desc.Annotations[ocispec.AnnotationTitle]
-	if !ok {
-		// no status for unnamed content
-		if !verbose {
-			return nil
-		}
-		name = desc.MediaType
-	}
-	return Print(status, ShortDigest(desc), name)
 }
 
 // PrintSuccessorStatus prints transfer status of successors.

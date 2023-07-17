@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2"
 	"oras.land/oras/cmd/oras/internal/display"
+	"oras.land/oras/cmd/oras/internal/display/track"
 	oerr "oras.land/oras/cmd/oras/internal/errors"
 	"oras.land/oras/cmd/oras/internal/option"
 	"oras.land/oras/internal/graph"
@@ -37,6 +38,7 @@ type copyOptions struct {
 	option.Platform
 	option.BinaryTarget
 	option.Referrers
+	option.TTY
 
 	recursive   bool
 	concurrency int
@@ -98,6 +100,13 @@ Example - Copy an artifact with multiple tags with concurrency tuned:
 	return cmd
 }
 
+var (
+	copying = "Copying"
+	skipped = "Skipped"
+	exists  = "Exists"
+	copied  = "Copied"
+)
+
 func runCopy(ctx context.Context, opts copyOptions) error {
 	ctx, logger := opts.WithContext(ctx)
 
@@ -116,60 +125,7 @@ func runCopy(ctx context.Context, opts copyOptions) error {
 		return err
 	}
 	opts.SetReferrersGC(dst, logger)
-
-	// Prepare copy options
-	committed := &sync.Map{}
-	extendedCopyOptions := oras.DefaultExtendedCopyOptions
-	extendedCopyOptions.Concurrency = opts.concurrency
-	extendedCopyOptions.FindPredecessors = graph.FindReferrerPredecessors
-	extendedCopyOptions.PreCopy = display.StatusPrinter("Copying", opts.Verbose)
-	extendedCopyOptions.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
-		committed.Store(desc.Digest.String(), desc.Annotations[ocispec.AnnotationTitle])
-		if err := display.PrintSuccessorStatus(ctx, desc, "Skipped", dst, committed, opts.Verbose); err != nil {
-			return err
-		}
-		return display.PrintStatus(desc, "Copied ", opts.Verbose)
-	}
-	extendedCopyOptions.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
-		committed.Store(desc.Digest.String(), desc.Annotations[ocispec.AnnotationTitle])
-		return display.PrintStatus(desc, "Exists ", opts.Verbose)
-	}
-
-	var desc ocispec.Descriptor
-	rOpts := oras.DefaultResolveOptions
-	rOpts.TargetPlatform = opts.Platform.Platform
-	if dstRef := opts.To.Reference; dstRef == "" {
-		desc, err = oras.Resolve(ctx, src, opts.From.Reference, rOpts)
-		if err != nil {
-			return fmt.Errorf("failed to resolve %s: %w", opts.From.Reference, err)
-		}
-		if opts.recursive {
-			err = oras.ExtendedCopyGraph(ctx, src, dst, desc, extendedCopyOptions.ExtendedCopyGraphOptions)
-		} else {
-			err = oras.CopyGraph(ctx, src, dst, desc, extendedCopyOptions.CopyGraphOptions)
-		}
-	} else {
-		if opts.recursive {
-			srcRef := opts.From.Reference
-			if rOpts.TargetPlatform != nil {
-				// resolve source reference to specified platform
-				desc, err := oras.Resolve(ctx, src, opts.From.Reference, rOpts)
-				if err != nil {
-					return fmt.Errorf("failed to resolve %s: %w", opts.From.Reference, err)
-				}
-				srcRef = desc.Digest.String()
-			}
-			desc, err = oras.ExtendedCopy(ctx, src, srcRef, dst, dstRef, extendedCopyOptions)
-		} else {
-			copyOptions := oras.CopyOptions{
-				CopyGraphOptions: extendedCopyOptions.CopyGraphOptions,
-			}
-			if opts.Platform.Platform != nil {
-				copyOptions.WithTargetPlatform(opts.Platform.Platform)
-			}
-			desc, err = oras.Copy(ctx, src, opts.From.Reference, dst, dstRef, copyOptions)
-		}
-	}
+	desc, err := doCopy(ctx, src, dst, opts)
 	if err != nil {
 		if oerr.IsReferrersIndexDelete(err) {
 			fmt.Fprintln(os.Stderr, "failed to remove the outdated referrers index, please use `--skip-delete-referrers` if you want to skip the deletion")
@@ -190,8 +146,84 @@ func runCopy(ctx context.Context, opts copyOptions) error {
 			return err
 		}
 	}
-
 	fmt.Println("Digest:", desc.Digest)
-
 	return nil
+}
+
+func doCopy(ctx context.Context, src option.ReadOnlyGraphTagFinderTarget, dst oras.GraphTarget, opts copyOptions) (ocispec.Descriptor, error) {
+	display.PadPrompts(&copying, &skipped, &exists, &copied)
+	if opts.IsTTY {
+		tracked, err := track.NewTarget(dst, copying, copied)
+		if err != nil {
+			return ocispec.Descriptor{}, err
+		}
+		defer tracked.Stop()
+		display.Trackable = tracked
+		dst = tracked
+	}
+
+	// Prepare copy options
+	committed := &sync.Map{}
+	extendedCopyOptions := oras.DefaultExtendedCopyOptions
+	extendedCopyOptions.Concurrency = opts.concurrency
+	extendedCopyOptions.FindPredecessors = graph.FindReferrerPredecessors
+	extendedCopyOptions.PreCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
+		if opts.IsTTY {
+			return nil
+		}
+		return display.PrintStatus(desc, copying, opts.Verbose)
+	}
+	extendedCopyOptions.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
+		committed.Store(desc.Digest.String(), desc.Annotations[ocispec.AnnotationTitle])
+		var err error
+		if err = display.PrintSuccessorStatus(ctx, desc, skipped, dst, committed, opts.Verbose); err != nil {
+			return err
+		}
+		if !opts.IsTTY {
+			err = display.PrintStatus(desc, copied, opts.Verbose)
+		}
+		return err
+	}
+	extendedCopyOptions.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
+		committed.Store(desc.Digest.String(), desc.Annotations[ocispec.AnnotationTitle])
+		return display.PrintStatus(desc, exists, opts.Verbose)
+	}
+
+	var desc ocispec.Descriptor
+	var err error
+	rOpts := oras.DefaultResolveOptions
+	rOpts.TargetPlatform = opts.Platform.Platform
+	if dstRef := opts.To.Reference; dstRef == "" {
+		desc, err = oras.Resolve(ctx, src, opts.From.Reference, rOpts)
+		if err != nil {
+			return ocispec.Descriptor{}, fmt.Errorf("failed to resolve %s: %w", opts.From.Reference, err)
+		}
+		if opts.recursive {
+			err = oras.ExtendedCopyGraph(ctx, src, dst, desc, extendedCopyOptions.ExtendedCopyGraphOptions)
+		} else {
+			err = oras.CopyGraph(ctx, src, dst, desc, extendedCopyOptions.CopyGraphOptions)
+		}
+	} else {
+		if opts.recursive {
+			srcRef := opts.From.Reference
+			if rOpts.TargetPlatform != nil {
+				// resolve source reference to specified platform
+				desc, err := oras.Resolve(ctx, src, opts.From.Reference, rOpts)
+				if err != nil {
+					return ocispec.Descriptor{}, fmt.Errorf("failed to resolve %s: %w", opts.From.Reference, err)
+				}
+				srcRef = desc.Digest.String()
+			}
+			desc, err = oras.ExtendedCopy(ctx, src, srcRef, dst, dstRef, extendedCopyOptions)
+		} else {
+			copyOptions := oras.CopyOptions{
+				CopyGraphOptions: extendedCopyOptions.CopyGraphOptions,
+			}
+			if opts.Platform.Platform != nil {
+				copyOptions.WithTargetPlatform(opts.Platform.Platform)
+			}
+			desc, err = oras.Copy(ctx, src, opts.From.Reference, dst, dstRef, copyOptions)
+		}
+	}
+	return desc, err
 }
