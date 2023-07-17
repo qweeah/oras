@@ -258,7 +258,7 @@ func runPull(ctx context.Context, opts pullOptions) error {
 
 func doPull(ctx context.Context, isTTY bool, src oras.ReadOnlyTarget, dst oras.GraphTarget, reference string, opts oras.CopyOptions) (ocispec.Descriptor, error) {
 	if isTTY {
-		tracked, err := track.NewTarget(dst, copying, copied)
+		tracked, err := track.NewTarget(dst, "Downloading", "Downloaded ")
 		if err != nil {
 			return ocispec.Descriptor{}, err
 		}
