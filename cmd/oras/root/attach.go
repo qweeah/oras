@@ -38,6 +38,7 @@ type attachOptions struct {
 	option.ImageSpec
 	option.Target
 	option.Referrers
+	option.TTY
 
 	artifactType string
 	concurrency  int
@@ -147,8 +148,8 @@ func runAttach(ctx context.Context, opts attachOptions) error {
 
 	graphCopyOptions := oras.DefaultCopyGraphOptions
 	graphCopyOptions.Concurrency = opts.concurrency
-	updateDisplayOption(&graphCopyOptions, store, opts.Verbose)
-	copy := func(root ocispec.Descriptor) error {
+	updateDisplayOption(&graphCopyOptions, store, opts.Verbose, opts.IsTTY)
+	copy := func(root ocispec.Descriptor, dst oras.Target) error {
 		graphCopyOptions.FindSuccessors = func(ctx context.Context, fetcher content.Fetcher, node ocispec.Descriptor) ([]ocispec.Descriptor, error) {
 			if content.Equal(node, root) {
 				// skip duplicated Resolve on subject
@@ -166,7 +167,7 @@ func runAttach(ctx context.Context, opts attachOptions) error {
 		return oras.CopyGraph(ctx, store, dst, root, graphCopyOptions)
 	}
 
-	root, err := pushArtifact(dst, pack, copy)
+	root, err := doPush(ctx, opts.IsTTY, pack, copy, dst)
 	if err != nil {
 		if oerr.IsReferrersIndexDelete(err) {
 			fmt.Fprintln(os.Stderr, "attached successfully but failed to remove the outdated referrers index, please use `--skip-delete-referrers` if you want to skip the deletion")

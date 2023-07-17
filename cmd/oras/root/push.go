@@ -29,6 +29,7 @@ import (
 	"oras.land/oras-go/v2/content/file"
 	"oras.land/oras-go/v2/content/memory"
 	"oras.land/oras/cmd/oras/internal/display"
+	"oras.land/oras/cmd/oras/internal/display/track"
 	"oras.land/oras/cmd/oras/internal/fileref"
 	"oras.land/oras/cmd/oras/internal/option"
 	"oras.land/oras/internal/contentutil"
@@ -39,6 +40,7 @@ type pushOptions struct {
 	option.Packer
 	option.ImageSpec
 	option.Target
+	option.TTY
 
 	extraRefs         []string
 	manifestConfigRef string
@@ -181,8 +183,8 @@ func runPush(ctx context.Context, opts pushOptions) error {
 	copyOptions := oras.DefaultCopyOptions
 	copyOptions.Concurrency = opts.concurrency
 	union := contentutil.MultiReadOnlyTarget(memoryStore, store)
-	updateDisplayOption(&copyOptions.CopyGraphOptions, union, opts.Verbose)
-	copy := func(root ocispec.Descriptor) error {
+	updateDisplayOption(&copyOptions.CopyGraphOptions, union, opts.Verbose, opts.IsTTY)
+	copy := func(root ocispec.Descriptor, dst oras.Target) error {
 		if tag := opts.Reference; tag == "" {
 			err = oras.CopyGraph(ctx, union, dst, root, copyOptions.CopyGraphOptions)
 		} else {
@@ -190,9 +192,7 @@ func runPush(ctx context.Context, opts pushOptions) error {
 		}
 		return err
 	}
-
-	// Push
-	root, err := pushArtifact(dst, pack, copy)
+	root, err := doPush(ctx, opts.IsTTY, pack, copy, dst)
 	if err != nil {
 		return err
 	}
@@ -216,9 +216,25 @@ func runPush(ctx context.Context, opts pushOptions) error {
 	return opts.ExportManifest(ctx, memoryStore, root)
 }
 
-func updateDisplayOption(opts *oras.CopyGraphOptions, fetcher content.Fetcher, verbose bool) {
+func doPush(ctx context.Context, isTTY bool, pack packFunc, copy copyFunc, dst oras.Target) (ocispec.Descriptor, error) {
+	if isTTY {
+		tracked, err := track.NewTarget(dst, "Uploading", "Uploaded ")
+		if err != nil {
+			return ocispec.Descriptor{}, err
+		}
+		defer tracked.Stop()
+		display.Trackable = tracked
+		dst = tracked
+	}
+	// Push
+	return pushArtifact(dst, pack, copy)
+}
+
+func updateDisplayOption(opts *oras.CopyGraphOptions, fetcher content.Fetcher, verbose, isTTY bool) {
 	committed := &sync.Map{}
-	opts.PreCopy = display.StatusPrinter("Uploading", verbose)
+	if !isTTY {
+		opts.PreCopy = display.StatusPrinter("Uploading", verbose)
+	}
 	opts.OnCopySkipped = func(ctx context.Context, desc ocispec.Descriptor) error {
 		committed.Store(desc.Digest.String(), desc.Annotations[ocispec.AnnotationTitle])
 		return display.PrintStatus(desc, "Exists   ", verbose)
@@ -228,12 +244,15 @@ func updateDisplayOption(opts *oras.CopyGraphOptions, fetcher content.Fetcher, v
 		if err := display.PrintSuccessorStatus(ctx, desc, "Skipped  ", fetcher, committed, verbose); err != nil {
 			return err
 		}
+		if isTTY {
+			return nil
+		}
 		return display.PrintStatus(desc, "Uploaded ", verbose)
 	}
 }
 
 type packFunc func() (ocispec.Descriptor, error)
-type copyFunc func(desc ocispec.Descriptor) error
+type copyFunc func(desc ocispec.Descriptor, dst oras.Target) error
 
 func pushArtifact(dst oras.Target, pack packFunc, copy copyFunc) (ocispec.Descriptor, error) {
 	root, err := pack()
@@ -242,7 +261,7 @@ func pushArtifact(dst oras.Target, pack packFunc, copy copyFunc) (ocispec.Descri
 	}
 
 	// push
-	if err = copy(root); err != nil {
+	if err = copy(root, dst); err != nil {
 		return ocispec.Descriptor{}, err
 	}
 	return root, nil

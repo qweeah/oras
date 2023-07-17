@@ -17,11 +17,14 @@ package track
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"reflect"
 	"sync"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/registry"
 	"oras.land/oras/cmd/oras/internal/display/progress"
 )
@@ -37,21 +40,21 @@ type Target interface {
 }
 
 type target struct {
-	oras.GraphTarget
+	oras.Target
 	m            progress.Manager
 	actionPrompt string
 	donePrompt   string
 	statusMap    *sync.Map
 }
 
-func NewTarget(t oras.GraphTarget, actionPrompt, donePrompt string) (Target, error) {
+func NewTarget(t oras.Target, actionPrompt, donePrompt string) (Target, error) {
 	manager, err := progress.NewManager()
 	if err != nil {
 		return nil, err
 	}
 
 	return &target{
-		GraphTarget:  t,
+		Target:       t,
 		m:            manager,
 		actionPrompt: actionPrompt,
 		donePrompt:   donePrompt,
@@ -65,7 +68,7 @@ func (t *target) Push(ctx context.Context, expected ocispec.Descriptor, content 
 		return err
 	}
 	defer close(r.status)
-	if err := t.GraphTarget.Push(ctx, expected, r); err != nil {
+	if err := t.Target.Push(ctx, expected, r); err != nil {
 		return err
 	}
 	r.status <- progress.NewStatus(t.donePrompt, expected, uint64(expected.Size))
@@ -78,13 +81,13 @@ func (t *target) PushReference(ctx context.Context, expected ocispec.Descriptor,
 		return err
 	}
 	defer close(r.status)
-	if rp, ok := t.GraphTarget.(registry.ReferencePusher); ok {
+	if rp, ok := t.Target.(registry.ReferencePusher); ok {
 		err = rp.PushReference(ctx, expected, r, reference)
 	} else {
-		if err := t.GraphTarget.Push(ctx, expected, r); err != nil {
+		if err := t.Target.Push(ctx, expected, r); err != nil {
 			return err
 		}
-		err = t.GraphTarget.Tag(ctx, expected, reference)
+		err = t.Target.Tag(ctx, expected, reference)
 	}
 
 	if err != nil {
@@ -92,6 +95,13 @@ func (t *target) PushReference(ctx context.Context, expected ocispec.Descriptor,
 	}
 	r.status <- progress.NewStatus(t.donePrompt, expected, uint64(expected.Size))
 	return nil
+}
+
+func (t *target) Predecessors(ctx context.Context, node ocispec.Descriptor) ([]ocispec.Descriptor, error) {
+	if p, ok := t.Target.(content.PredecessorFinder); ok {
+		return p.Predecessors(ctx, node)
+	}
+	return nil, fmt.Errorf("target %v does not support Predecessors", reflect.TypeOf(t.Target))
 }
 
 func (t *target) Stop() {
