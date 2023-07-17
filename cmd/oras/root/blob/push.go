@@ -19,11 +19,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
+	"oras.land/oras-go/v2"
 	"oras.land/oras/cmd/oras/internal/display"
+	"oras.land/oras/cmd/oras/internal/display/track"
 	"oras.land/oras/cmd/oras/internal/option"
 	"oras.land/oras/internal/file"
 )
@@ -33,6 +36,7 @@ type pushBlobOptions struct {
 	option.Descriptor
 	option.Pretty
 	option.Target
+	option.TTY
 
 	fileRef   string
 	mediaType string
@@ -98,7 +102,7 @@ Example - Push blob 'hi.txt' into an OCI image layout folder 'layout-dir':
 func pushBlob(ctx context.Context, opts pushBlobOptions) (err error) {
 	ctx, _ = opts.WithContext(ctx)
 
-	repo, err := opts.NewTarget(opts.Common)
+	target, err := opts.NewTarget(opts.Common)
 	if err != nil {
 		return err
 	}
@@ -110,27 +114,19 @@ func pushBlob(ctx context.Context, opts pushBlobOptions) (err error) {
 	}
 	defer rc.Close()
 
-	exists, err := repo.Exists(ctx, desc)
+	exists, err := target.Exists(ctx, desc)
 	if err != nil {
 		return err
 	}
 	verbose := opts.Verbose && !opts.OutputDescriptor
 	if exists {
-		if err := display.PrintStatus(desc, "Exists", verbose); err != nil {
-			return err
-		}
+		err = display.PrintStatus(desc, "Exists", verbose)
 	} else {
-		if err := display.PrintStatus(desc, "Uploading", verbose); err != nil {
-			return err
-		}
-		if err = repo.Push(ctx, desc, rc); err != nil {
-			return err
-		}
-		if err := display.PrintStatus(desc, "Uploaded ", verbose); err != nil {
-			return err
-		}
+		err = opts.doPush(ctx, target, desc, rc)
 	}
-
+	if err != nil {
+		return err
+	}
 	// outputs blob's descriptor
 	if opts.OutputDescriptor {
 		descJSON, err := opts.Marshal(desc)
@@ -143,5 +139,31 @@ func pushBlob(ctx context.Context, opts pushBlobOptions) (err error) {
 	fmt.Println("Pushed", opts.AnnotatedReference())
 	fmt.Println("Digest:", desc.Digest)
 
+	return nil
+}
+
+// doPush pushes a blob to a registry or an OCI image layout
+func (opts *pushBlobOptions) doPush(ctx context.Context, t oras.Target, desc ocispec.Descriptor, r io.Reader) error {
+	if !opts.IsTTY {
+		if err := display.PrintStatus(desc, "Uploading", opts.Verbose); err != nil {
+			return err
+		}
+	}
+	if opts.IsTTY {
+		trackedReader, err := track.NewReader(r, desc, "Uploading")
+		if err != nil {
+			return err
+		}
+		defer trackedReader.Stop()
+		r = trackedReader
+	}
+	if err := t.Push(ctx, desc, r); err != nil {
+		return err
+	}
+	if !opts.IsTTY {
+		if err := display.PrintStatus(desc, "Uploaded ", opts.Verbose); err != nil {
+			return err
+		}
+	}
 	return nil
 }
