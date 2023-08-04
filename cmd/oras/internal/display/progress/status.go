@@ -17,6 +17,7 @@ package progress
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/dustin/go-humanize"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -38,9 +39,9 @@ func NewStatus(prompt string, descriptor ocispec.Descriptor, offset uint64) *sta
 }
 
 // String returns a viewable TTY string of the status.
-func (s *status) String(width int) string {
+func (s *status) String(width int) (string, string) {
 	if s == nil {
-		return "loading..."
+		return "loading status...", "loading progress..."
 	}
 	// todo: doesn't support multiline prompt
 	current := s.offset
@@ -53,10 +54,9 @@ func (s *status) String(width int) string {
 		name = s.descriptor.MediaType
 	}
 
-	left := fmt.Sprintf("%c %s %s %s", GetMark(s), s.prompt, d, name)
-	right := fmt.Sprintf(" %s/%s %.2f%%", humanize.Bytes(current), humanize.Bytes(total), percent*100)
-	if len(left)+len(right) > width {
-		right = fmt.Sprintf(" %.2f%%", percent*100)
-	}
-	return fmt.Sprintf("%-*s%s", width-len(right)-1, left, right)
+	progress := fmt.Sprintf("] %s/%s %.2f%%", humanize.Bytes(current), humanize.Bytes(total), percent*100)
+
+	barLen := width - len(progress)
+	bar := fmt.Sprintf("   └─[%.*s", barLen-6, strings.Repeat("=", int(float64(barLen)*percent))+">")
+	return fmt.Sprintf("%c %s %s %s", GetMark(s), s.prompt, d, name), fmt.Sprintf("%-*s%s", barLen, bar, progress)
 }

@@ -85,15 +85,17 @@ func (m *manager) render() {
 	defer m.mu.Unlock()
 	// todo: update size in another routine
 	width, height := m.c.Size()
-	len := len(m.statuses)
+	len := len(m.statuses) * 2
 	offset := 0
 	if len > height {
 		// skip statuses that cannot be rendered
 		offset = len - height
 	}
 
-	for ; offset < len; offset++ {
-		m.c.OutputTo(uint(len-offset), m.statuses[offset].String(width))
+	for ; offset < len; offset += 2 {
+		status, progress := m.statuses[offset/2].String(width)
+		m.c.OutputTo(uint(len-offset), status)
+		m.c.OutputTo(uint(len-offset-1), progress)
 	}
 }
 
@@ -102,6 +104,7 @@ func (m *manager) Add() Status {
 	defer m.mu.Unlock()
 	id := len(m.statuses)
 	m.statuses = append(m.statuses, nil)
+	defer m.c.NewRow()
 	defer m.c.NewRow()
 	return m.newStatus(id)
 }
