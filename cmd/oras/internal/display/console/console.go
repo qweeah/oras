@@ -78,7 +78,6 @@ func (c *Console) OutputTo(upCnt uint, str string) {
 func (c *Console) Restore() {
 	// cannot use aec.Restore since DEC has better compatilibity than SCO
 	fmt.Fprint(c, "\0338")
-	fmt.Fprint(c, "\n")
 	fmt.Fprint(c, aec.Column(0))
 	fmt.Fprint(c, aec.EraseLine(aec.EraseModes.All))
 	fmt.Fprint(c, aec.Show)
