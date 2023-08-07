@@ -17,8 +17,10 @@ package progress
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/dustin/go-humanize"
+	"github.com/morikuni/aec"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -53,10 +55,16 @@ func (s *status) String(width int) string {
 		name = s.descriptor.MediaType
 	}
 
-	left := fmt.Sprintf("%c %s %s %s", GetMark(s), s.prompt, d, name)
-	right := fmt.Sprintf(" %s/%s %.2f%%", humanize.Bytes(current), humanize.Bytes(total), percent*100)
-	if len(left)+len(right) > width {
-		right = fmt.Sprintf(" %.2f%%", percent*100)
+	// format: [bar(13)] [info] [detail(algin right)]
+	lenBar := int(percent / 0.05)
+	bar := fmt.Sprintf("[%s%s]", aec.Inverse.Apply(strings.Repeat(" ", lenBar)), strings.Repeat(".", 20-lenBar))
+	info := fmt.Sprintf("%c %s %s %s", GetMark(s), s.prompt, d, name)
+	detail := fmt.Sprintf(" %s/%s %.2f%%", humanize.Bytes(current), humanize.Bytes(total), percent*100)
+
+	left := fmt.Sprintf("%s %s", bar, info)
+	if len(left)+len(detail) > width {
+		// todo: show partial info when space is not enough
+		detail = fmt.Sprintf(" %.2f%%", percent*100)
 	}
-	return fmt.Sprintf("%-*s%s", width-len(right)-1, left, right)
+	return fmt.Sprintf("%-*s%s", width-len(detail)-1, left, detail)
 }

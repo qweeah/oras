@@ -123,7 +123,7 @@ func (m *manager) update(ch chan *status, id int) {
 func (m *manager) Wait() {
 	// 1. stop periodic render
 	m.renderTick.Stop()
-	m.close.Do(func() {
+	defer m.close.Do(func() {
 		close(m.done)
 		// 4. restore cursor, mark done
 		defer m.c.Restore()
