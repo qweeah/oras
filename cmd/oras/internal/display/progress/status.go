@@ -20,8 +20,11 @@ import (
 	"strings"
 
 	"github.com/dustin/go-humanize"
+	"github.com/morikuni/aec"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
+
+const BarMaxLength = 40
 
 // status is a progress status
 type status struct {
@@ -46,7 +49,6 @@ func (s *status) String(width int) (string, string) {
 	// todo: doesn't support multiline prompt
 	current := s.offset
 	total := uint64(s.descriptor.Size)
-	d := s.descriptor.Digest.Encoded()[:12]
 	percent := float64(s.offset) / float64(total)
 
 	name := s.descriptor.Annotations["org.opencontainers.image.title"]
@@ -54,9 +56,13 @@ func (s *status) String(width int) (string, string) {
 		name = s.descriptor.MediaType
 	}
 
-	progress := fmt.Sprintf("] %s/%s %.2f%%", humanize.Bytes(current), humanize.Bytes(total), percent*100)
+	// Todo: if horizontal space is not enough, hide some detail
+	// format: |mark(1) action(<10) bar(42)    size_per_size(19) percent(8) time(8)|()
+	//           └─ digest(72) name(126)
+	lenBar := int(percent * BarMaxLength)
+	bar := fmt.Sprintf("[%s%s]", aec.Inverse.Apply(strings.Repeat(" ", lenBar)), strings.Repeat(".", BarMaxLength-lenBar))
+	left := fmt.Sprintf("%c %s %s", GetMark(s), s.prompt, bar)
+	right := fmt.Sprintf(" %s/%s %6.2f%%", humanize.Bytes(current), humanize.Bytes(total), percent*100)
 
-	barLen := width - len(progress)
-	bar := fmt.Sprintf("   └─[%.*s", barLen-6, strings.Repeat("=", int(float64(barLen)*percent))+">")
-	return fmt.Sprintf("%c %s %s %s", GetMark(s), s.prompt, d, name), fmt.Sprintf("%-*s%s", barLen, bar, progress)
+	return fmt.Sprintf("%-*s%s", width-len(right), left, right), fmt.Sprintf("   └──%s %s", s.descriptor.Digest.String(), name)
 }

@@ -126,10 +126,10 @@ func (m *manager) update(ch chan *status, id int) {
 func (m *manager) Wait() {
 	// 1. stop periodic render
 	m.renderTick.Stop()
-	m.close.Do(func() {
-		close(m.done)
+	close(m.done)
+	defer m.close.Do(func() {
 		// 4. restore cursor, mark done
-		defer m.c.Restore()
+		m.c.Restore()
 	})
 	// 2. wait for all model update done
 	m.updating.Wait()
