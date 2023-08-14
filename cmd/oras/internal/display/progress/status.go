@@ -17,6 +17,7 @@ package progress
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dustin/go-humanize"
 	"github.com/morikuni/aec"
@@ -27,14 +28,34 @@ import (
 type status struct {
 	prompt     string
 	descriptor ocispec.Descriptor
-	offset     uint64
+	offset     int64
+	startTime  *time.Time
+	endTime    *time.Time
 }
 
 func NewStatus(prompt string, descriptor ocispec.Descriptor, offset uint64) *status {
 	return &status{
 		prompt:     prompt,
 		descriptor: descriptor,
-		offset:     offset,
+		offset:     int64(offset),
+	}
+}
+
+// StartTiming starts timing.
+func StartTiming() *status {
+	now := time.Now()
+	return &status{
+		offset:    -1,
+		startTime: &now,
+	}
+}
+
+// EndTiming starts timing.
+func EndTiming() *status {
+	now := time.Now()
+	return &status{
+		offset:  -1,
+		endTime: &now,
 	}
 }
 
@@ -54,11 +75,51 @@ func (s *status) String(width int) string {
 		name = s.descriptor.MediaType
 	}
 	left := fmt.Sprintf("%s %s %s", s.prompt, d, name)
-	right := fmt.Sprintf(" %s/%s %.2f%%", humanize.Bytes(current), humanize.Bytes(total), percent*100)
+	right := fmt.Sprintf(" %s/%s %.2f%% %s", humanize.Bytes(uint64(current)), humanize.Bytes(total), percent*100, s.DurationString())
 	if len(left)+len(right) > width {
 		right = fmt.Sprintf(" %.2f%%", percent*100)
 	}
 	out := fmt.Sprintf("%-*s%s", width-len(right)-1, left, right)
 	done := int(float64(len(out)) * percent)
 	return aec.Inverse.Apply(out[:done]) + out[done:]
+}
+
+// DurationString returns a viewable TTY string of the status with duration.
+func (s *status) DurationString() string {
+	if s.startTime == nil {
+		return "00:00:00"
+	}
+
+	var d time.Duration
+	if s.endTime == nil {
+		d = time.Since(*s.startTime)
+	} else {
+		d = s.endTime.Sub(*s.startTime)
+	}
+
+	if d > time.Millisecond {
+		d = d.Round(time.Millisecond)
+	}
+	return d.String()
+}
+
+// Update updates a status.
+func (s *status) Update(new *status) *status {
+	if s == nil {
+		s = &status{}
+	}
+	if new.offset > 0 {
+		s.descriptor = new.descriptor
+		s.offset = new.offset
+	}
+	if new.prompt != "" {
+		s.prompt = new.prompt
+	}
+	if new.startTime != nil {
+		s.startTime = new.startTime
+	}
+	if new.endTime != nil {
+		s.endTime = new.endTime
+	}
+	return s
 }
