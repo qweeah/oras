@@ -68,7 +68,6 @@ func (s *status) String(width int) (string, string) {
 		return "loading status...", "loading progress..."
 	}
 	// todo: doesn't support multiline prompt
-	current := s.offset
 	total := uint64(s.descriptor.Size)
 	percent := float64(s.offset) / float64(total)
 
@@ -83,7 +82,7 @@ func (s *status) String(width int) (string, string) {
 	lenBar := int(percent * BarMaxLength)
 	bar := fmt.Sprintf("[%s%s]", aec.Inverse.Apply(strings.Repeat(" ", lenBar)), strings.Repeat(".", BarMaxLength-lenBar))
 	left := fmt.Sprintf("%c %s %s", GetMark(s), s.prompt, bar)
-	right := fmt.Sprintf(" %s/%s %6.2f%% %s", humanize.Bytes(current), humanize.Bytes(total), percent*100, s.DurationString())
+	right := fmt.Sprintf(" %s/%s %6.2f%% %s", humanize.Bytes(uint64(s.offset)), humanize.Bytes(total), percent*100, s.DurationString())
 
 	return fmt.Sprintf("%-*s%s", width-len(right), left, right), fmt.Sprintf("   └──%s %s", s.descriptor.Digest.String(), name)
 }

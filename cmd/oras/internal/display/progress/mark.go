@@ -7,7 +7,7 @@ var (
 )
 
 func GetMark(s *status) rune {
-	if s.offset == uint64(s.descriptor.Size) {
+	if s.offset == s.descriptor.Size {
 		return '√'
 	}
 	spinnerPos = (spinnerPos + 1) % spinnerLen
