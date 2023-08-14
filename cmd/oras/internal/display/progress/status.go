@@ -18,6 +18,7 @@ package progress
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/dustin/go-humanize"
 	"github.com/morikuni/aec"
@@ -30,14 +31,34 @@ const BarMaxLength = 40
 type status struct {
 	prompt     string
 	descriptor ocispec.Descriptor
-	offset     uint64
+	offset     int64
+	startTime  *time.Time
+	endTime    *time.Time
 }
 
 func NewStatus(prompt string, descriptor ocispec.Descriptor, offset uint64) *status {
 	return &status{
 		prompt:     prompt,
 		descriptor: descriptor,
-		offset:     offset,
+		offset:     int64(offset),
+	}
+}
+
+// StartTiming starts timing.
+func StartTiming() *status {
+	now := time.Now()
+	return &status{
+		offset:    -1,
+		startTime: &now,
+	}
+}
+
+// EndTiming starts timing.
+func EndTiming() *status {
+	now := time.Now()
+	return &status{
+		offset:  -1,
+		endTime: &now,
 	}
 }
 
@@ -62,7 +83,47 @@ func (s *status) String(width int) (string, string) {
 	lenBar := int(percent * BarMaxLength)
 	bar := fmt.Sprintf("[%s%s]", aec.Inverse.Apply(strings.Repeat(" ", lenBar)), strings.Repeat(".", BarMaxLength-lenBar))
 	left := fmt.Sprintf("%c %s %s", GetMark(s), s.prompt, bar)
-	right := fmt.Sprintf(" %s/%s %6.2f%%", humanize.Bytes(current), humanize.Bytes(total), percent*100)
+	right := fmt.Sprintf(" %s/%s %6.2f%% %s", humanize.Bytes(current), humanize.Bytes(total), percent*100, s.DurationString())
 
 	return fmt.Sprintf("%-*s%s", width-len(right), left, right), fmt.Sprintf("   └──%s %s", s.descriptor.Digest.String(), name)
+}
+
+// DurationString returns a viewable TTY string of the status with duration.
+func (s *status) DurationString() string {
+	if s.startTime == nil {
+		return "00:00:00"
+	}
+
+	var d time.Duration
+	if s.endTime == nil {
+		d = time.Since(*s.startTime)
+	} else {
+		d = s.endTime.Sub(*s.startTime)
+	}
+
+	if d > time.Millisecond {
+		d = d.Round(time.Millisecond)
+	}
+	return d.String()
+}
+
+// Update updates a status.
+func (s *status) Update(new *status) *status {
+	if s == nil {
+		s = &status{}
+	}
+	if new.offset > 0 {
+		s.descriptor = new.descriptor
+		s.offset = new.offset
+	}
+	if new.prompt != "" {
+		s.prompt = new.prompt
+	}
+	if new.startTime != nil {
+		s.startTime = new.startTime
+	}
+	if new.endTime != nil {
+		s.endTime = new.endTime
+	}
+	return s
 }
