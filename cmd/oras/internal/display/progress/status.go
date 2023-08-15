@@ -81,10 +81,10 @@ func (s *status) String(width int) (string, string) {
 	//           └─ digest(72) name(126)
 	lenBar := int(percent * BarMaxLength)
 	bar := fmt.Sprintf("[%s%s]", aec.Inverse.Apply(strings.Repeat(" ", lenBar)), strings.Repeat(".", BarMaxLength-lenBar))
-	left := fmt.Sprintf("%c %s %s", GetMark(s), s.prompt, bar)
+	left := fmt.Sprintf("%s %c %s %s", bar, GetMark(s), s.prompt, name)
 	right := fmt.Sprintf(" %s/%s %6.2f%% %s", humanize.Bytes(uint64(s.offset)), humanize.Bytes(total), percent*100, s.DurationString())
 
-	return fmt.Sprintf("%-*s%s", width-len(right), left, right), fmt.Sprintf("   └──%s %s", s.descriptor.Digest.String(), name)
+	return fmt.Sprintf("%-*s%s", width-len(right), left, right), fmt.Sprintf("   └──%s", s.descriptor.Digest.String())
 }
 
 // DurationString returns a viewable TTY string of the status with duration.
