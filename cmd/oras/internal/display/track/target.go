@@ -71,6 +71,8 @@ func (t *target) Push(ctx context.Context, expected ocispec.Descriptor, content 
 	if err := t.Target.Push(ctx, expected, r); err != nil {
 		return err
 	}
+
+	r.ch <- progress.EndTiming()
 	r.ch <- progress.NewStatus(t.donePrompt, expected, uint64(expected.Size))
 	return nil
 }
@@ -93,6 +95,8 @@ func (t *target) PushReference(ctx context.Context, expected ocispec.Descriptor,
 	if err != nil {
 		return err
 	}
+
+	r.ch <- progress.EndTiming()
 	r.ch <- progress.NewStatus(t.donePrompt, expected, uint64(expected.Size))
 	return nil
 }
