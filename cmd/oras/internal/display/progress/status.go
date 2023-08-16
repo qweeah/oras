@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/dustin/go-humanize"
 	"github.com/morikuni/aec"
@@ -77,14 +78,13 @@ func (s *status) String(width int) (string, string) {
 	}
 
 	// Todo: if horizontal space is not enough, hide some detail
-	// format: |mark(1) action(<10) bar(42)    size_per_size(19) percent(8) time(8)|()
-	//           └─ digest(72) name(126)
+	// format: bar(42) mark(1) action(<10) name(126)    size_per_size(19) percent(8) time(8)
+	//           └─ digest(72)
 	lenBar := int(percent * BarMaxLength)
 	bar := fmt.Sprintf("[%s%s]", aec.Inverse.Apply(strings.Repeat(" ", lenBar)), strings.Repeat(".", BarMaxLength-lenBar))
 	left := fmt.Sprintf("%s %c %s %s", bar, GetMark(s), s.prompt, name)
 	right := fmt.Sprintf(" %s/%s %6.2f%% %s", humanize.Bytes(uint64(s.offset)), humanize.Bytes(total), percent*100, s.DurationString())
-
-	return fmt.Sprintf("%-*s%s", width-len(right), left, right), fmt.Sprintf("   └──%s", s.descriptor.Digest.String())
+	return fmt.Sprintf("%-*s%s", width-utf8.RuneCountInString(right), left, right), fmt.Sprintf("  └─ %s", s.descriptor.Digest.String())
 }
 
 // DurationString returns a viewable TTY string of the status with duration.
@@ -102,6 +102,8 @@ func (s *status) DurationString() string {
 
 	if d > time.Millisecond {
 		d = d.Round(time.Millisecond)
+	} else {
+		d = d.Round(10 * time.Nanosecond)
 	}
 	return d.String()
 }
