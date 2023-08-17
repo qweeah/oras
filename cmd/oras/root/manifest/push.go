@@ -23,12 +23,14 @@ import (
 	"strings"
 
 	digest "github.com/opencontainers/go-digest"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras/cmd/oras/internal/display"
+	"oras.land/oras/cmd/oras/internal/display/track"
 	oerr "oras.land/oras/cmd/oras/internal/errors"
 	"oras.land/oras/cmd/oras/internal/option"
 	"oras.land/oras/internal/file"
@@ -135,35 +137,9 @@ func pushManifest(ctx context.Context, opts pushOptions) error {
 
 	// prepare manifest descriptor
 	desc := content.NewDescriptorFromBytes(mediaType, contentBytes)
-
-	ref := opts.Reference
-	if ref == "" {
-		ref = desc.Digest.String()
-	}
-	match, err := matchDigest(ctx, target, ref, desc.Digest)
-	if err != nil {
+	if err := opts.doPush(ctx, target, desc, contentBytes); err != nil {
 		return err
 	}
-	verbose := opts.Verbose && !opts.OutputDescriptor
-	if match {
-		if err := display.PrintStatus(desc, "Exists", verbose); err != nil {
-			return err
-		}
-	} else {
-		if err = display.PrintStatus(desc, "Uploading", verbose); err != nil {
-			return err
-		}
-		if _, err := oras.TagBytes(ctx, target, mediaType, contentBytes, ref); err != nil {
-			if oerr.IsReferrersIndexDelete(err) {
-				fmt.Fprintln(os.Stderr, "pushed successfully but failed to remove the outdated referrers index, please use `--skip-delete-referrers` if you want to skip the deletion")
-			}
-			return err
-		}
-		if err = display.PrintStatus(desc, "Uploaded ", verbose); err != nil {
-			return err
-		}
-	}
-
 	tagBytesNOpts := oras.DefaultTagBytesNOptions
 	tagBytesNOpts.Concurrency = opts.concurrency
 
@@ -186,9 +162,51 @@ func pushManifest(ctx context.Context, opts pushOptions) error {
 			return err
 		}
 	}
-
 	fmt.Println("Digest:", desc.Digest)
+	return nil
+}
 
+func (opts *pushOptions) doPush(ctx context.Context, target oras.Target, desc ocispec.Descriptor, contentBytes []byte) error {
+	ref := opts.Reference
+	if ref == "" {
+		ref = desc.Digest.String()
+	}
+	match, err := matchDigest(ctx, target, ref, desc.Digest)
+	if err != nil {
+		return err
+	}
+	verbose := opts.Verbose && !opts.OutputDescriptor
+	if opts.UseTTY {
+		tracked, err := track.NewTarget(target, "Uploading", "Uploaded ")
+		if err != nil {
+			return err
+		}
+		defer tracked.Stop()
+		target = tracked
+		display.Trackable = tracked
+	}
+	if match {
+		if err := display.PrintStatus(desc, "Exists", verbose); err != nil {
+			return err
+		}
+	} else {
+		if !opts.UseTTY {
+			if err = display.PrintStatus(desc, "Uploading", verbose); err != nil {
+				return err
+			}
+		}
+		if _, err := oras.TagBytes(ctx, target, desc.MediaType, contentBytes, ref); err != nil {
+			if oerr.IsReferrersIndexDelete(err) {
+				fmt.Fprintln(os.Stderr, "pushed successfully but failed to remove the outdated referrers index, please use `--skip-delete-referrers` if you want to skip the deletion")
+			}
+			return err
+		}
+		if !opts.UseTTY {
+			if err = display.PrintStatus(desc, "Uploaded ", verbose); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 

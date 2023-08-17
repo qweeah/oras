@@ -114,6 +114,7 @@ func (t *target) Stop() {
 
 func (t *target) Prompt(desc ocispec.Descriptor, prompt string) {
 	status := t.m.Add()
-	status <- progress.NewStatus(prompt, desc, uint64(desc.Size))
 	defer close(status)
+	status <- progress.NewStatus(prompt, desc, uint64(desc.Size))
+	status <- progress.EndTiming()
 }
