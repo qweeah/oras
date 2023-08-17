@@ -28,6 +28,7 @@ type reader struct {
 	base         io.Reader
 	offset       atomic.Uint64
 	actionPrompt string
+	donePrompt   string
 	descriptor   ocispec.Descriptor
 	mu           sync.Mutex
 	m            progress.Manager
@@ -35,28 +36,36 @@ type reader struct {
 	once         sync.Once
 }
 
-func NewReader(r io.Reader, descriptor ocispec.Descriptor, prompt string) (*reader, error) {
+func NewReader(r io.Reader, descriptor ocispec.Descriptor, actionPrompt string, donePrompt string) (*reader, error) {
 	manager, err := progress.NewManager()
 	if err != nil {
 		return nil, err
 	}
-	return managedReader(r, descriptor, manager, prompt)
+	return managedReader(r, descriptor, manager, actionPrompt, donePrompt)
 }
 
-func managedReader(r io.Reader, descriptor ocispec.Descriptor, manager progress.Manager, prompt string) (*reader, error) {
+func managedReader(r io.Reader, descriptor ocispec.Descriptor, manager progress.Manager, actionPrompt string, donePrompt string) (*reader, error) {
 	return &reader{
 		base:         r,
 		descriptor:   descriptor,
-		actionPrompt: prompt,
+		actionPrompt: actionPrompt,
+		donePrompt:   donePrompt,
 		m:            manager,
 		ch:           manager.Add(),
 	}, nil
 }
 
+// End closes the status channel.
+func (r *reader) End() {
+	defer close(r.ch)
+	r.ch <- progress.EndTiming()
+
+	r.ch <- progress.NewStatus(r.donePrompt, r.descriptor, uint64(r.descriptor.Size))
+}
+
 // Stop stops the status channel and related manager.
 func (r *reader) Stop() {
-	r.ch <- progress.EndTiming()
-	close(r.ch)
+	r.End()
 	r.m.Wait()
 }
 

@@ -63,7 +63,7 @@ func NewTarget(t oras.Target, actionPrompt, donePrompt string) (Target, error) {
 }
 
 func (t *target) Push(ctx context.Context, expected ocispec.Descriptor, content io.Reader) error {
-	r, err := managedReader(content, expected, t.m, t.actionPrompt)
+	r, err := managedReader(content, expected, t.m, t.actionPrompt, t.donePrompt)
 	if err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func (t *target) Push(ctx context.Context, expected ocispec.Descriptor, content 
 }
 
 func (t *target) PushReference(ctx context.Context, expected ocispec.Descriptor, content io.Reader, reference string) error {
-	r, err := managedReader(content, expected, t.m, t.actionPrompt)
+	r, err := managedReader(content, expected, t.m, t.actionPrompt, t.donePrompt)
 	if err != nil {
 		return err
 	}

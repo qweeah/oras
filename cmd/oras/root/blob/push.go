@@ -149,7 +149,7 @@ func (opts *pushBlobOptions) doPush(ctx context.Context, t oras.Target, desc oci
 		}
 	}
 	if opts.UseTTY {
-		trackedReader, err := track.NewReader(r, desc, "Uploading")
+		trackedReader, err := track.NewReader(r, desc, "Uploading", "Uploaded ")
 		if err != nil {
 			return err
 		}
