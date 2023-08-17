@@ -30,6 +30,7 @@ const BarMaxLength = 40
 
 // status is a progress status
 type status struct {
+	done       bool
 	prompt     string
 	descriptor ocispec.Descriptor
 	offset     int64
@@ -54,7 +55,7 @@ func StartTiming() *status {
 	}
 }
 
-// EndTiming starts timing.
+// EndTiming ends timing and set status to done.
 func EndTiming() *status {
 	now := time.Now()
 	return &status{
@@ -63,7 +64,7 @@ func EndTiming() *status {
 	}
 }
 
-// String returns a viewable TTY string of the status.
+// String returns human-readable TTY strings of the status.
 func (s *status) String(width int) (string, string) {
 	if s == nil {
 		return "loading status...", "loading progress..."
@@ -78,19 +79,38 @@ func (s *status) String(width int) (string, string) {
 	}
 
 	// Todo: if horizontal space is not enough, hide some detail
-	// format: bar(42) mark(1) action(<10) name(126)    size_per_size(19) percent(8) time(8)
+	// format:  [left-------------------------------][margin][right-----------------------------]
+	//          mark(1) bar(42) action(<10) name(126)        size_per_size(19) percent(8) time(8)
 	//           └─ digest(72)
-	lenBar := int(percent * BarMaxLength)
-	bar := fmt.Sprintf("[%s%s]", aec.Inverse.Apply(strings.Repeat(" ", lenBar)), strings.Repeat(".", BarMaxLength-lenBar))
-	left := fmt.Sprintf("%s %c %s %s", bar, GetMark(s), s.prompt, name)
+	var left string
+	var lenLeft int
+	if !s.done {
+		lenBar := int(percent * BarMaxLength)
+		bar := fmt.Sprintf("[%s%s]", aec.Inverse.Apply(strings.Repeat(" ", lenBar)), strings.Repeat(".", BarMaxLength-lenBar))
+		left = fmt.Sprintf("%c %s %s %s", GetMark(s), bar, s.prompt, name)
+		// bar + wrapper(2) + space(1)
+		lenLeft = BarMaxLength + 2 + 1
+	} else {
+		left = fmt.Sprintf("%c %s %s", GetMark(s), s.prompt, name)
+	}
+	// mark(1) + space(1) + prompt+ space(1) + name
+	lenLeft += 1 + 1 + utf8.RuneCountInString(s.prompt) + 1 + utf8.RuneCountInString(name)
+
 	right := fmt.Sprintf(" %s/%s %6.2f%% %s", humanize.Bytes(uint64(s.offset)), humanize.Bytes(total), percent*100, s.DurationString())
-	return fmt.Sprintf("%-*s%s", width-utf8.RuneCountInString(right), left, right), fmt.Sprintf("  └─ %s", s.descriptor.Digest.String())
+	lenRight := utf8.RuneCountInString(right)
+	lenMargin := width - lenLeft - lenRight
+	if lenMargin < 0 {
+		// hide partial name with one space left
+		left = left[:len(left)+lenMargin-1] + "."
+		lenMargin = 0
+	}
+	return fmt.Sprintf("%s%s%s", left, strings.Repeat(" ", lenMargin), right), fmt.Sprintf("  └─ %s", s.descriptor.Digest.String())
 }
 
 // DurationString returns a viewable TTY string of the status with duration.
 func (s *status) DurationString() string {
 	if s.startTime == nil {
-		return "00:00:00"
+		return "0ms"
 	}
 
 	var d time.Duration
@@ -100,9 +120,14 @@ func (s *status) DurationString() string {
 		d = s.endTime.Sub(*s.startTime)
 	}
 
-	if d > time.Millisecond {
+	switch {
+	case d > time.Minute:
+		d = d.Round(time.Second)
+	case d > time.Second:
+		d = d.Round(100 * time.Millisecond)
+	case d > time.Millisecond:
 		d = d.Round(time.Millisecond)
-	} else {
+	default:
 		d = d.Round(10 * time.Nanosecond)
 	}
 	return d.String()
@@ -125,6 +150,7 @@ func (s *status) Update(new *status) *status {
 	}
 	if new.endTime != nil {
 		s.endTime = new.endTime
+		s.done = true
 	}
 	return s
 }
