@@ -39,7 +39,6 @@ type pullOptions struct {
 	option.Common
 	option.Platform
 	option.Target
-	option.TTY
 
 	concurrency       int
 	KeepOldFiles      bool
@@ -124,7 +123,7 @@ func runPull(ctx context.Context, opts pullOptions) error {
 	var getConfigOnce sync.Once
 	copyOptions.FindSuccessors = func(ctx context.Context, fetcher content.Fetcher, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
 		successorFetcher := content.FetcherFunc(func(ctx context.Context, target ocispec.Descriptor) (fetched io.ReadCloser, fetchErr error) {
-			if _, ok := printed.LoadOrStore(generateContentKey(target), true); ok || opts.IsTTY {
+			if _, ok := printed.LoadOrStore(generateContentKey(target), true); ok || opts.UseTTY {
 				return fetcher.Fetch(ctx, target)
 			}
 
@@ -205,7 +204,7 @@ func runPull(ctx context.Context, opts pullOptions) error {
 
 	pulledEmpty := true
 	copyOptions.PreCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
-		if _, ok := printed.LoadOrStore(generateContentKey(desc), true); ok || opts.IsTTY {
+		if _, ok := printed.LoadOrStore(generateContentKey(desc), true); ok || opts.UseTTY {
 			return nil
 		}
 		return display.PrintStatus(desc, "Downloading", opts.Verbose)
@@ -234,14 +233,14 @@ func runPull(ctx context.Context, opts pullOptions) error {
 			pulledEmpty = false
 		}
 		printed.Store(generateContentKey(desc), true)
-		if opts.IsTTY {
+		if opts.UseTTY {
 			return nil
 		}
 		return display.Print("Downloaded ", display.ShortDigest(desc), name)
 	}
 
 	// Copy
-	desc, err := doPull(ctx, opts.IsTTY, src, dst, opts.Reference, copyOptions)
+	desc, err := doPull(ctx, opts.UseTTY, src, dst, opts.Reference, copyOptions)
 	if err != nil {
 		if errors.Is(err, file.ErrPathTraversalDisallowed) {
 			err = fmt.Errorf("%s: %w", "use flag --allow-path-traversal to allow insecurely pulling files outside of working directory", err)

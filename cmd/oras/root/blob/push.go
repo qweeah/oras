@@ -36,7 +36,6 @@ type pushBlobOptions struct {
 	option.Descriptor
 	option.Pretty
 	option.Target
-	option.TTY
 
 	fileRef   string
 	mediaType string
@@ -144,12 +143,12 @@ func pushBlob(ctx context.Context, opts pushBlobOptions) (err error) {
 
 // doPush pushes a blob to a registry or an OCI image layout
 func (opts *pushBlobOptions) doPush(ctx context.Context, t oras.Target, desc ocispec.Descriptor, r io.Reader) error {
-	if !opts.IsTTY {
+	if !opts.UseTTY {
 		if err := display.PrintStatus(desc, "Uploading", opts.Verbose); err != nil {
 			return err
 		}
 	}
-	if opts.IsTTY {
+	if opts.UseTTY {
 		trackedReader, err := track.NewReader(r, desc, "Uploading")
 		if err != nil {
 			return err
@@ -160,7 +159,7 @@ func (opts *pushBlobOptions) doPush(ctx context.Context, t oras.Target, desc oci
 	if err := t.Push(ctx, desc, r); err != nil {
 		return err
 	}
-	if !opts.IsTTY {
+	if !opts.UseTTY {
 		if err := display.PrintStatus(desc, "Uploaded ", opts.Verbose); err != nil {
 			return err
 		}

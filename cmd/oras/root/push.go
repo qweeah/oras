@@ -40,7 +40,6 @@ type pushOptions struct {
 	option.Packer
 	option.ImageSpec
 	option.Target
-	option.TTY
 
 	extraRefs         []string
 	manifestConfigRef string
@@ -183,7 +182,7 @@ func runPush(ctx context.Context, opts pushOptions) error {
 	copyOptions := oras.DefaultCopyOptions
 	copyOptions.Concurrency = opts.concurrency
 	union := contentutil.MultiReadOnlyTarget(memoryStore, store)
-	updateDisplayOption(&copyOptions.CopyGraphOptions, union, opts.Verbose, opts.IsTTY)
+	updateDisplayOption(&copyOptions.CopyGraphOptions, union, opts.Verbose, opts.UseTTY)
 	copy := func(root ocispec.Descriptor, dst oras.Target) error {
 		if tag := opts.Reference; tag == "" {
 			err = oras.CopyGraph(ctx, union, dst, root, copyOptions.CopyGraphOptions)
@@ -192,7 +191,7 @@ func runPush(ctx context.Context, opts pushOptions) error {
 		}
 		return err
 	}
-	root, err := doPush(ctx, opts.IsTTY, pack, copy, dst)
+	root, err := doPush(ctx, opts.UseTTY, pack, copy, dst)
 	if err != nil {
 		return err
 	}

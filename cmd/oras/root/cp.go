@@ -38,7 +38,6 @@ type copyOptions struct {
 	option.Platform
 	option.BinaryTarget
 	option.Referrers
-	option.TTY
 
 	recursive   bool
 	concurrency int
@@ -152,7 +151,7 @@ func runCopy(ctx context.Context, opts copyOptions) error {
 
 func doCopy(ctx context.Context, src option.ReadOnlyGraphTagFinderTarget, dst oras.GraphTarget, opts copyOptions) (ocispec.Descriptor, error) {
 	display.PadPrompts(&copying, &skipped, &exists, &copied)
-	if opts.IsTTY {
+	if opts.UseTTY {
 		tracked, err := track.NewTarget(dst, copying, copied)
 		if err != nil {
 			return ocispec.Descriptor{}, err
@@ -168,7 +167,7 @@ func doCopy(ctx context.Context, src option.ReadOnlyGraphTagFinderTarget, dst or
 	extendedCopyOptions.Concurrency = opts.concurrency
 	extendedCopyOptions.FindPredecessors = graph.FindReferrerPredecessors
 	extendedCopyOptions.PreCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
-		if opts.IsTTY {
+		if opts.UseTTY {
 			return nil
 		}
 		return display.PrintStatus(desc, copying, opts.Verbose)
@@ -179,7 +178,7 @@ func doCopy(ctx context.Context, src option.ReadOnlyGraphTagFinderTarget, dst or
 		if err = display.PrintSuccessorStatus(ctx, desc, skipped, dst, committed, opts.Verbose); err != nil {
 			return err
 		}
-		if !opts.IsTTY {
+		if !opts.UseTTY {
 			err = display.PrintStatus(desc, copied, opts.Verbose)
 		}
 		return err
