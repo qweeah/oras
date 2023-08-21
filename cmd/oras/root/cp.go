@@ -18,7 +18,6 @@ package root
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 
@@ -26,9 +25,9 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/content"
 	"oras.land/oras/cmd/oras/internal/display"
 	"oras.land/oras/cmd/oras/internal/display/track"
-	oerr "oras.land/oras/cmd/oras/internal/errors"
 	"oras.land/oras/cmd/oras/internal/option"
 	"oras.land/oras/internal/graph"
 )
@@ -37,7 +36,6 @@ type copyOptions struct {
 	option.Common
 	option.Platform
 	option.BinaryTarget
-	option.Referrers
 
 	recursive   bool
 	concurrency int
@@ -107,7 +105,7 @@ var (
 )
 
 func runCopy(ctx context.Context, opts copyOptions) error {
-	ctx, logger := opts.WithContext(ctx)
+	ctx, _ = opts.WithContext(ctx)
 
 	// Prepare source
 	src, err := opts.From.NewReadonlyTarget(ctx, opts.Common)
@@ -123,12 +121,8 @@ func runCopy(ctx context.Context, opts copyOptions) error {
 	if err != nil {
 		return err
 	}
-	opts.SetReferrersGC(dst, logger)
 	desc, err := doCopy(ctx, src, dst, opts)
 	if err != nil {
-		if oerr.IsReferrersIndexDelete(err) {
-			fmt.Fprintln(os.Stderr, "failed to remove the outdated referrers index, please use `--skip-delete-referrers` if you want to skip the deletion")
-		}
 		return err
 	}
 
@@ -165,7 +159,9 @@ func doCopy(ctx context.Context, src option.ReadOnlyGraphTagFinderTarget, dst or
 	committed := &sync.Map{}
 	extendedCopyOptions := oras.DefaultExtendedCopyOptions
 	extendedCopyOptions.Concurrency = opts.concurrency
-	extendedCopyOptions.FindPredecessors = graph.FindReferrerPredecessors
+	extendedCopyOptions.FindPredecessors = func(ctx context.Context, src content.ReadOnlyGraphStorage, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
+		return graph.Referrers(ctx, src, desc, "")
+	}
 	extendedCopyOptions.PreCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
 		if opts.UseTTY {
 			return nil

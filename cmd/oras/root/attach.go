@@ -19,7 +19,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -27,7 +26,6 @@ import (
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/content/file"
-	oerr "oras.land/oras/cmd/oras/internal/errors"
 	"oras.land/oras/cmd/oras/internal/option"
 	"oras.land/oras/internal/graph"
 )
@@ -35,9 +33,7 @@ import (
 type attachOptions struct {
 	option.Common
 	option.Packer
-	option.ImageSpec
 	option.Target
-	option.Referrers
 
 	artifactType string
 	concurrency  int
@@ -54,10 +50,6 @@ func attachCmd() *cobra.Command {
 
 Example - Attach file 'hi.txt' with type 'doc/example' to manifest 'hello:v1' in registry 'localhost:5000':
   oras attach --artifact-type doc/example localhost:5000/hello:v1 hi.txt
-
-Example - Attach file "hi.txt" with specific media type when building the manifest:
-  oras attach --artifact-type doc/example --image-spec v1.1-image localhost:5000/hello:v1 hi.txt    # OCI image
-  oras attach --artifact-type doc/example --image-spec v1.1-artifact localhost:5000/hello:v1 hi.txt # OCI artifact
 
 Example - Attach file "hi.txt" using a specific method for the Referrers API:
   oras attach --artifact-type doc/example --distribution-spec v1.1-referrers-api localhost:5000/hello:v1 hi.txt # via API
@@ -101,7 +93,7 @@ Example - Attach file to the manifest tagged 'v1' in an OCI image layout folder 
 }
 
 func runAttach(ctx context.Context, opts attachOptions) error {
-	ctx, logger := opts.WithContext(ctx)
+	ctx, _ = opts.WithContext(ctx)
 	annotations, err := opts.LoadManifestAnnotations()
 	if err != nil {
 		return err
@@ -124,8 +116,6 @@ func runAttach(ctx context.Context, opts attachOptions) error {
 	if err := opts.EnsureReferenceNotEmpty(); err != nil {
 		return err
 	}
-	opts.SetReferrersGC(dst, logger)
-
 	subject, err := dst.Resolve(ctx, opts.Reference)
 	if err != nil {
 		return err
@@ -139,7 +129,7 @@ func runAttach(ctx context.Context, opts attachOptions) error {
 	packOpts := oras.PackOptions{
 		Subject:             &subject,
 		ManifestAnnotations: annotations[option.AnnotationManifest],
-		PackImageManifest:   opts.ManifestMediaType == ocispec.MediaTypeImageManifest,
+		PackImageManifest:   true,
 	}
 	pack := func() (ocispec.Descriptor, error) {
 		return oras.Pack(ctx, store, opts.artifactType, descs, packOpts)
@@ -168,9 +158,6 @@ func runAttach(ctx context.Context, opts attachOptions) error {
 
 	root, err := doPush(ctx, opts.UseTTY, pack, copy, dst)
 	if err != nil {
-		if oerr.IsReferrersIndexDelete(err) {
-			fmt.Fprintln(os.Stderr, "attached successfully but failed to remove the outdated referrers index, please use `--skip-delete-referrers` if you want to skip the deletion")
-		}
 		return err
 	}
 

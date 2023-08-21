@@ -41,7 +41,6 @@ type pushOptions struct {
 	option.Descriptor
 	option.Pretty
 	option.Target
-	option.Referrers
 
 	concurrency int
 	extraRefs   []string
@@ -108,14 +107,13 @@ Example - Push a manifest to an OCI image layout folder 'layout-dir' and tag wit
 }
 
 func pushManifest(ctx context.Context, opts pushOptions) error {
-	ctx, logger := opts.WithContext(ctx)
+	ctx, _ = opts.WithContext(ctx)
 	var target oras.Target
 	var err error
 	target, err = opts.NewTarget(opts.Common)
 	if err != nil {
 		return err
 	}
-	opts.SetReferrersGC(target, logger)
 	if repo, ok := target.(*remote.Repository); ok {
 		target = repo.Manifests()
 	}
@@ -140,6 +138,7 @@ func pushManifest(ctx context.Context, opts pushOptions) error {
 	if err := opts.doPush(ctx, target, desc, contentBytes); err != nil {
 		return err
 	}
+
 	tagBytesNOpts := oras.DefaultTagBytesNOptions
 	tagBytesNOpts.Concurrency = opts.concurrency
 
