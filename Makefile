@@ -51,7 +51,7 @@ clean:  ## clean up build
 build: build-linux build-mac build-windows  ## build for all targets
 
 .PHONY: build-linux
-build-linux: build-linux-amd64 build-linux-arm64 build-linux-arm-v7 build-linux-s390x  ## build all linux architectures
+build-linux: build-linux-amd64 build-linux-arm64 build-linux-arm-v7 build-linux-s390x build-linux-ppc64le build-linux-riscv64 ## build all linux architectures
 
 .PHONY: build-linux-amd64
 build-linux-amd64:  ## build for linux amd64
@@ -72,6 +72,16 @@ build-linux-arm-v7:  ## build for linux arm v7
 build-linux-s390x:  ## build for linux s390x
 	GOARCH=s390x CGO_ENABLED=0 GOOS=linux $(GO_EXE) build -v --ldflags="$(LDFLAGS)" \
 		-o bin/linux/s390x/$(CLI_EXE) $(CLI_PKG)
+
+.PHONY: build-linux-ppc64le
+build-linux-ppc64le:  ## build for linux ppc64le
+	GOARCH= ppc64leCGO_ENABLED=0 GOOS=linux $(GO_EXE) build -v --ldflags="$(LDFLAGS)" \
+		-o bin/linux/ppc64le/$(CLI_EXE) $(CLI_PKG)
+
+.PHONY: build-linux-riscv64
+build-linux-riscv64:  ## build for linux riscv64
+	GOARCH= riscv64CGO_ENABLED=0 GOOS=linux $(GO_EXE) build -v --ldflags="$(LDFLAGS)" \
+		-o bin/linux/riscv64/$(CLI_EXE) $(CLI_PKG)
 
 .PHONY: build-mac
 build-mac: build-mac-arm64 build-mac-amd64  ## build all mac architectures
