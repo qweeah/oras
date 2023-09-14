@@ -54,7 +54,7 @@ parts:
 
 apps:
   oras-test:
-    command: bin/oras-test
+    command: bin/oras
     plugs:
       - home
       - network
