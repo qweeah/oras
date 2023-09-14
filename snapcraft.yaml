@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: oras
+name: oras-test
 version: '{VERSION}'
 summary: Package for the ORAS CLI tool
 description: |
@@ -29,7 +29,7 @@ architectures:
     build-for: s390x
 
 parts:
-  oras:
+  oras-test:
     plugin: go
     source: https://github.com/oras-project/oras.git
     source-type: git
@@ -53,8 +53,8 @@ parts:
   
 
 apps:
-  oras:
-    command: bin/oras
+  oras-test:
+    command: bin/oras-test
     plugs:
       - home
       - network
