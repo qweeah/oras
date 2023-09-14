@@ -25,7 +25,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -40,12 +39,10 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
       - name: make snapcraft
         run: |
-          sed -i 's/{VERSION}/${{ steps.version.outputs.version }}/g' .github/workflows/snapcraft
-          cat ./.github/workflows/snapcraft
+          sed -i 's/{VERSION}/${{ steps.version.outputs.version }}/g' snapcraft.yaml
+          cat snapcraft.yaml
       - uses: snapcore/action-build@v1
         id: build
-        with:
-          path: .github/workflows/snapcraft
       - uses: snapcore/action-publish@v1
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
