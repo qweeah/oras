@@ -39,7 +39,7 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
       - name: make snapcraft
         run: |
-          sed -i 's/{VERSION}/${{ steps.version.outputs.version }}/g' snapcraft.yaml
+          sed -i 's/{VERSION}/v1.0.0/g' snapcraft.yaml
           cat snapcraft.yaml
       - uses: snapcore/action-build@v1
         id: build
