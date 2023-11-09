@@ -30,10 +30,10 @@ import (
 	"oras.land/oras-go/v2/content/file"
 	"oras.land/oras-go/v2/content/memory"
 	"oras.land/oras-go/v2/registry/remote/auth"
-	"oras.land/oras/cmd/oras/internal/display"
-	"oras.land/oras/cmd/oras/internal/display/track"
 	"oras.land/oras/cmd/oras/internal/fileref"
 	"oras.land/oras/cmd/oras/internal/option"
+	"oras.land/oras/cmd/oras/internal/output/display"
+	"oras.land/oras/cmd/oras/internal/output/display/track"
 	"oras.land/oras/internal/contentutil"
 	"oras.land/oras/internal/registryutil"
 )

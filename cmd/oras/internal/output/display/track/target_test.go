@@ -25,7 +25,7 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/memory"
-	"oras.land/oras/cmd/oras/internal/display/console/testutils"
+	"oras.land/oras/cmd/oras/internal/output/display/console/testutils"
 )
 
 type testReferenceGraphTarget struct {
