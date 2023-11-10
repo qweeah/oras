@@ -23,6 +23,7 @@ import (
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2/content/file"
 	"oras.land/oras/cmd/oras/internal/fileref"
+	"oras.land/oras/cmd/oras/internal/output/display"
 )
 
 func loadFiles(ctx context.Context, store *file.Store, annotations map[string]map[string]string, fileRefs []string, verbose bool) ([]ocispec.Descriptor, error) {
@@ -58,7 +59,7 @@ func loadFiles(ctx context.Context, store *file.Store, annotations map[string]ma
 		files = append(files, file)
 	}
 	if len(files) == 0 {
-		fmt.Println("Uploading empty artifact")
+		display.Print("Uploading empty artifact")
 	}
 	return files, nil
 }

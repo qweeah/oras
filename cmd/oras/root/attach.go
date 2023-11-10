@@ -28,6 +28,7 @@ import (
 	"oras.land/oras-go/v2/content/file"
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras/cmd/oras/internal/option"
+	"oras.land/oras/cmd/oras/internal/output/display"
 	"oras.land/oras/cmd/oras/internal/output/display/track"
 	"oras.land/oras/internal/graph"
 	"oras.land/oras/internal/registryutil"
@@ -37,6 +38,7 @@ type attachOptions struct {
 	option.Common
 	option.Packer
 	option.Target
+	option.Format
 
 	artifactType string
 	concurrency  int
@@ -83,6 +85,7 @@ Example - Attach file to the manifest tagged 'v1' in an OCI image layout folder 
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			display.SwitchToStderr()
 			return runAttach(cmd.Context(), opts)
 		},
 	}
@@ -177,9 +180,13 @@ func runAttach(ctx context.Context, opts attachOptions) error {
 	if !strings.HasSuffix(opts.RawReference, digest) {
 		opts.RawReference = fmt.Sprintf("%s@%s", opts.Path, subject.Digest)
 	}
-	fmt.Println("Attached to", opts.AnnotatedReference())
-	fmt.Println("Digest:", root.Digest)
+	display.Print("Attached to", opts.AnnotatedReference())
+	display.Print("Digest:", root.Digest)
 
 	// Export manifest
-	return opts.ExportManifest(ctx, store, root)
+	if err = opts.ExportManifest(ctx, store, root); err != nil {
+		return err
+	}
+	// TODO: schema, PRD needed
+	return opts.Print(root, opts.TTY != nil)
 }

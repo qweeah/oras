@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"sync"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -33,10 +34,31 @@ var printLock sync.Mutex
 type PrintFunc func(ocispec.Descriptor) error
 
 // Print objects to display concurrent-safely.
-func Print(a ...any) error {
+var Print func(a ...any) error
+
+func init() {
+	Print = printStdout
+}
+
+// SwitchToStderr switches Print to stderr.
+func SwitchToStderr() {
+	Print = printStderr
+}
+
+// printStdout displays objects concurrent-safely.
+func printStdout(a ...any) error {
+	return printTo(os.Stderr, a...)
+}
+
+// printStderr displays objects concurrent-safely.
+func printStderr(a ...any) error {
+	return printTo(os.Stderr, a...)
+}
+
+func printTo(w io.Writer, a ...any) error {
 	printLock.Lock()
 	defer printLock.Unlock()
-	_, err := fmt.Println(a...)
+	_, err := fmt.Fprintln(w, a...)
 	return err
 }
 

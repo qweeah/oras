@@ -18,7 +18,6 @@ package root
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"strings"
 	"sync"
@@ -43,6 +42,7 @@ type pushOptions struct {
 	option.Packer
 	option.ImageSpec
 	option.Target
+	option.Format
 
 	extraRefs         []string
 	manifestConfigRef string
@@ -122,6 +122,7 @@ Example - Push file "hi.txt" into an OCI image layout folder 'layout-dir' with t
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			display.SwitchToStderr()
 			return runPush(cmd.Context(), opts)
 		},
 	}
@@ -211,7 +212,7 @@ func runPush(ctx context.Context, opts pushOptions) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Pushed", opts.AnnotatedReference())
+	display.Print("Pushed", opts.AnnotatedReference())
 
 	if len(opts.extraRefs) != 0 {
 		contentBytes, err := content.FetchAll(ctx, memoryStore, root)
@@ -225,10 +226,13 @@ func runPush(ctx context.Context, opts pushOptions) error {
 		}
 	}
 
-	fmt.Println("Digest:", root.Digest)
+	display.Print("Digest:", root.Digest)
 
 	// Export manifest
-	return opts.ExportManifest(ctx, memoryStore, root)
+	if err = opts.ExportManifest(ctx, memoryStore, root); err != nil {
+		return nil
+	}
+	return opts.Print(root, opts.TTY != nil)
 }
 
 func doPush(dst oras.Target, pack packFunc, copy copyFunc) (ocispec.Descriptor, error) {
