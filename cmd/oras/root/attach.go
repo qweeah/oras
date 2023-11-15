@@ -28,6 +28,7 @@ import (
 	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/content/file"
 	"oras.land/oras-go/v2/registry/remote/auth"
+	"oras.land/oras/cmd/oras/internal/display"
 	"oras.land/oras/cmd/oras/internal/display/track"
 	"oras.land/oras/cmd/oras/internal/meta"
 	"oras.land/oras/cmd/oras/internal/option"
@@ -180,8 +181,8 @@ func runAttach(ctx context.Context, opts attachOptions) error {
 	if !strings.HasSuffix(opts.RawReference, digest) {
 		opts.RawReference = fmt.Sprintf("%s@%s", opts.Path, subject.Digest)
 	}
-	fmt.Println("Attached to", opts.AnnotatedReference())
-	fmt.Println("Digest:", root.Digest)
+	display.PrintErr("Attached to", opts.AnnotatedReference())
+	display.PrintErr("Digest:", root.Digest)
 
 	// Export manifest
 	if err = opts.ExportManifest(ctx, store, root); err != nil {
