@@ -21,5 +21,5 @@ import (
 
 type Push struct {
 	ocispec.Descriptor
-	FullRef string
+	Ref string
 }

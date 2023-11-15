@@ -191,7 +191,7 @@ func runAttach(ctx context.Context, opts attachOptions) error {
 
 	meta := meta.Push{
 		Descriptor: root,
-		FullRef:    fmt.Sprintf("%s@%s", opts.Path, root.Digest),
+		Ref:        fmt.Sprintf("%s@%s", opts.Path, root.Digest),
 	}
 	return opts.WriteTo(os.Stdout, meta)
 }
