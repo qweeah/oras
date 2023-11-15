@@ -20,6 +20,7 @@ import (
 	"html/template"
 	"io"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/spf13/pflag"
 )
 
@@ -48,7 +49,7 @@ func (opts *Format) WriteTo(w io.Writer, data interface{}) error {
 	default:
 		// go templating
 		var err error
-		t := template.New("out") // todo: add sprig .Funcs(sprigFuncs)
+		t := template.New("out").Funcs(sprig.FuncMap())
 		t, err = t.Parse(opts.template)
 		if err != nil {
 			return err
