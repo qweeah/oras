@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -28,6 +29,7 @@ import (
 	"oras.land/oras-go/v2/content/file"
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras/cmd/oras/internal/display/track"
+	"oras.land/oras/cmd/oras/internal/meta"
 	"oras.land/oras/cmd/oras/internal/option"
 	"oras.land/oras/internal/graph"
 	"oras.land/oras/internal/registryutil"
@@ -37,6 +39,7 @@ type attachOptions struct {
 	option.Common
 	option.Packer
 	option.Target
+	option.Format
 
 	artifactType string
 	concurrency  int
@@ -181,5 +184,13 @@ func runAttach(ctx context.Context, opts attachOptions) error {
 	fmt.Println("Digest:", root.Digest)
 
 	// Export manifest
-	return opts.ExportManifest(ctx, store, root)
+	if err = opts.ExportManifest(ctx, store, root); err != nil {
+		return err
+	}
+
+	meta := meta.Push{
+		Descriptor: root,
+		FullRef:    fmt.Sprintf("%s@%s", opts.Path, root.Digest),
+	}
+	return opts.WriteTo(os.Stdout, meta)
 }

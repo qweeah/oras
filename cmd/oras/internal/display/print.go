@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"sync"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -31,6 +32,14 @@ var printLock sync.Mutex
 
 // PrintFunc is the function type returned by StatusPrinter.
 type PrintFunc func(ocispec.Descriptor) error
+
+// PrintErr prints into stderr.
+func PrintErr(a ...any) error {
+	printLock.Lock()
+	defer printLock.Unlock()
+	_, err := fmt.Fprintln(os.Stderr, a...)
+	return err
+}
 
 // Print objects to display concurrent-safely.
 func Print(a ...any) error {

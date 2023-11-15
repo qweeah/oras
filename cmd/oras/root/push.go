@@ -33,6 +33,7 @@ import (
 	"oras.land/oras/cmd/oras/internal/display"
 	"oras.land/oras/cmd/oras/internal/display/track"
 	"oras.land/oras/cmd/oras/internal/fileref"
+	"oras.land/oras/cmd/oras/internal/meta"
 	"oras.land/oras/cmd/oras/internal/option"
 	"oras.land/oras/internal/contentutil"
 	"oras.land/oras/internal/registryutil"
@@ -43,6 +44,7 @@ type pushOptions struct {
 	option.Packer
 	option.ImageSpec
 	option.Target
+	option.Format
 
 	extraRefs         []string
 	manifestConfigRef string
@@ -211,7 +213,7 @@ func runPush(ctx context.Context, opts pushOptions) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Pushed", opts.AnnotatedReference())
+	display.PrintErr("Pushed", opts.AnnotatedReference())
 
 	if len(opts.extraRefs) != 0 {
 		contentBytes, err := content.FetchAll(ctx, memoryStore, root)
@@ -225,10 +227,18 @@ func runPush(ctx context.Context, opts pushOptions) error {
 		}
 	}
 
-	fmt.Println("Digest:", root.Digest)
+	display.PrintErr("Digest:", root.Digest)
 
 	// Export manifest
-	return opts.ExportManifest(ctx, memoryStore, root)
+	if err := opts.ExportManifest(ctx, memoryStore, root); err != nil {
+		return err
+	}
+
+	meta := meta.Push{
+		Descriptor: root,
+		FullRef:    fmt.Sprintf("%s@%s", opts.Path, root.Digest),
+	}
+	return opts.WriteTo(os.Stdout, meta)
 }
 
 func doPush(dst oras.Target, pack packFunc, copy copyFunc) (ocispec.Descriptor, error) {
