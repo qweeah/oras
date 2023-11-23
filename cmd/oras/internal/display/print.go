@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"sync"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -39,6 +40,8 @@ func init() {
 
 // Set sets the output writer for printing.
 func Set(template string, tty io.Writer) {
+	printLock.Lock()
+	defer printLock.Unlock()
 	if template != "" {
 		to = tty
 	}
@@ -49,11 +52,12 @@ type PrintFunc func(ocispec.Descriptor) error
 
 // Print objects to display concurrent-safely.
 func Print(a ...any) error {
-	if to == nil {
-		return nil
-	}
 	printLock.Lock()
 	defer printLock.Unlock()
+
+	if reflect.ValueOf(to).IsNil() {
+		return nil
+	}
 	_, err := fmt.Fprintln(to, a...)
 	return err
 }
