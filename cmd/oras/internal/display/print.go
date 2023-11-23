@@ -28,24 +28,33 @@ import (
 	"oras.land/oras-go/v2/registry"
 )
 
-var printLock sync.Mutex
+var (
+	printLock sync.Mutex
+	to        io.Writer
+)
+
+func init() {
+	to = os.Stdout
+}
+
+// Set sets the output writer for printing.
+func Set(template string, tty io.Writer) {
+	if template != "" {
+		to = tty
+	}
+}
 
 // PrintFunc is the function type returned by StatusPrinter.
 type PrintFunc func(ocispec.Descriptor) error
 
-// PrintErr prints into stderr.
-func PrintErr(a ...any) error {
-	printLock.Lock()
-	defer printLock.Unlock()
-	_, err := fmt.Fprintln(os.Stderr, a...)
-	return err
-}
-
 // Print objects to display concurrent-safely.
 func Print(a ...any) error {
+	if to == nil {
+		return nil
+	}
 	printLock.Lock()
 	defer printLock.Unlock()
-	_, err := fmt.Println(a...)
+	_, err := fmt.Fprintln(to, a...)
 	return err
 }
 

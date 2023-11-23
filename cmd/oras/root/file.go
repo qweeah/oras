@@ -59,7 +59,7 @@ func loadFiles(ctx context.Context, store *file.Store, annotations map[string]ma
 		files = append(files, file)
 	}
 	if len(files) == 0 {
-		display.PrintErr("Uploading empty artifact")
+		display.Print("Uploading empty artifact")
 	}
 	return files, nil
 }

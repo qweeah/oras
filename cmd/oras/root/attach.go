@@ -87,6 +87,7 @@ Example - Attach file to the manifest tagged 'v1' in an OCI image layout folder 
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			display.Set(opts.Template, opts.TTY)
 			return runAttach(cmd.Context(), opts)
 		},
 	}
@@ -181,8 +182,8 @@ func runAttach(ctx context.Context, opts attachOptions) error {
 	if !strings.HasSuffix(opts.RawReference, digest) {
 		opts.RawReference = fmt.Sprintf("%s@%s", opts.Path, subject.Digest)
 	}
-	display.PrintErr("Attached to", opts.AnnotatedReference())
-	display.PrintErr("Digest:", root.Digest)
+	display.Print("Attached to", opts.AnnotatedReference())
+	display.Print("Digest:", root.Digest)
 
 	// Export manifest
 	if err = opts.ExportManifest(ctx, store, root); err != nil {

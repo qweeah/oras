@@ -124,6 +124,7 @@ Example - Push file "hi.txt" into an OCI image layout folder 'layout-dir' with t
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			display.Set(opts.Template, opts.TTY)
 			return runPush(cmd.Context(), opts)
 		},
 	}
@@ -213,7 +214,7 @@ func runPush(ctx context.Context, opts pushOptions) error {
 	if err != nil {
 		return err
 	}
-	display.PrintErr("Pushed", opts.AnnotatedReference())
+	display.Print("Pushed", opts.AnnotatedReference())
 
 	if len(opts.extraRefs) != 0 {
 		contentBytes, err := content.FetchAll(ctx, memoryStore, root)
@@ -227,7 +228,7 @@ func runPush(ctx context.Context, opts pushOptions) error {
 		}
 	}
 
-	display.PrintErr("Digest:", root.Digest)
+	display.Print("Digest:", root.Digest)
 
 	// Export manifest
 	if err := opts.ExportManifest(ctx, memoryStore, root); err != nil {

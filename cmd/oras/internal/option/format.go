@@ -25,16 +25,18 @@ import (
 )
 
 type Format struct {
-	template string
+	Template string
 }
 
 // ApplyFlag implements FlagProvider.ApplyFlag
 func (opts *Format) ApplyFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&opts.template, "format", "", `Format output with go template syntax`)
+	fs.StringVar(&opts.Template, "format", "", `Format output with go template syntax`)
 }
 
 func (opts *Format) WriteTo(w io.Writer, data interface{}) error {
-	switch opts.template {
+	switch opts.Template {
+	case "":
+		return nil
 	case "json":
 		// output json
 		// write marshalled data
@@ -50,7 +52,7 @@ func (opts *Format) WriteTo(w io.Writer, data interface{}) error {
 		// go templating
 		var err error
 		t := template.New("out").Funcs(sprig.FuncMap())
-		t, err = t.Parse(opts.template)
+		t, err = t.Parse(opts.Template)
 		if err != nil {
 			return err
 		}
