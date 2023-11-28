@@ -21,5 +21,5 @@ import (
 
 type Push struct {
 	ocispec.Descriptor
-	Ref string
+	Ref string `json:"ref"`
 }
