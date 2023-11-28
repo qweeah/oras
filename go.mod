@@ -2,6 +2,8 @@ module oras.land/oras
 
 go 1.21
 
+replace oras.land/oras-go/v2 => github.com/ktarplee/oras-go/v2 v2.0.0-20231127125554-d5cc4c20693e
+
 require (
 	github.com/containerd/console v1.0.3
 	github.com/morikuni/aec v1.0.0
