@@ -17,8 +17,8 @@ package option
 
 import (
 	"encoding/json"
-	"html/template"
 	"io"
+	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/spf13/pflag"
