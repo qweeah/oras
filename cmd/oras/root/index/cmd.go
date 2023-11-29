@@ -13,36 +13,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package root
+package index
 
 import (
 	"github.com/spf13/cobra"
-	"oras.land/oras/cmd/oras/root/blob"
-	"oras.land/oras/cmd/oras/root/index"
-	"oras.land/oras/cmd/oras/root/manifest"
-	"oras.land/oras/cmd/oras/root/repo"
 )
 
-func New() *cobra.Command {
+func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "oras [command]",
-		SilenceUsage: true,
+		Use:   "index [command]",
+		Short: "Index operations",
 	}
+
 	cmd.AddCommand(
-		pullCmd(),
-		pushCmd(),
-		loginCmd(),
-		logoutCmd(),
-		versionCmd(),
-		discoverCmd(),
-		resolveCmd(),
-		copyCmd(),
-		tagCmd(),
-		attachCmd(),
-		blob.Cmd(),
-		manifest.Cmd(),
-		repo.Cmd(),
-		index.Cmd(),
+		createCmd(),
 	)
 	return cmd
 }
