@@ -234,12 +234,7 @@ func runPush(ctx context.Context, opts pushOptions) error {
 	if err := opts.ExportManifest(ctx, memoryStore, root); err != nil {
 		return err
 	}
-
-	meta := meta.Push{
-		Descriptor: root,
-		Ref:        fmt.Sprintf("%s@%s", opts.Path, root.Digest),
-	}
-	return opts.WriteTo(os.Stdout, meta)
+	return opts.WriteTo(os.Stdout, meta.NewPush(root, fmt.Sprintf("%s@%s", opts.Path, root.Digest)))
 }
 
 func doPush(dst oras.Target, pack packFunc, copy copyFunc) (ocispec.Descriptor, error) {

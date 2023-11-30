@@ -192,10 +192,5 @@ func runAttach(ctx context.Context, opts attachOptions) error {
 	if err = opts.ExportManifest(ctx, store, root); err != nil {
 		return err
 	}
-
-	meta := meta.Push{
-		Descriptor: root,
-		Ref:        fmt.Sprintf("%s@%s", opts.Path, root.Digest),
-	}
-	return opts.WriteTo(os.Stdout, meta)
+	return opts.WriteTo(os.Stdout, meta.NewPush(root, fmt.Sprintf("%s@%s", opts.Path, root.Digest)))
 }

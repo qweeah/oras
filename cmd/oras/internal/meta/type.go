@@ -17,18 +17,13 @@ package meta
 
 import ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 
-type push struct {
-	Descriptor
+// DigestReference is a reference to an artifact with digest.
+type DigestReference struct {
+	Reference string `json:"reference"`
 }
 
-// NewPush creates a new push metadata
-func NewPush(descriptor ocispec.Descriptor, reference string) push {
-	return push{
-		Descriptor: Descriptor{
-			DigestReference: DigestReference{
-				Reference: reference,
-			},
-			Descriptor: descriptor,
-		},
-	}
+// Descriptor is a descriptor with digest reference.
+type Descriptor struct {
+	DigestReference
+	ocispec.Descriptor
 }
