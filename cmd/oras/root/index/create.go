@@ -120,6 +120,16 @@ func createManifest(ctx context.Context, opts createOptions) error {
 	return nil
 }
 
+const (
+	promptExists    = "Exists   "
+	promptCopying   = "Copying  "
+	promptCopied    = "Copied   "
+	promptSkipped   = "Skipped  "
+	promptMounted   = "Mouned   "
+	promptUploading = "Uploading"
+	promptUploaded  = "Uploaded "
+)
+
 func doCopy(ctx context.Context, dst oras.GraphTarget, destOpts createOptions, logger logrus.FieldLogger) ([]ocispec.Descriptor, error) {
 	// Prepare dest target
 	dstAsRemote, dstIsRemote := dst.(*remote.Repository)
@@ -130,13 +140,6 @@ func doCopy(ctx context.Context, dst oras.GraphTarget, destOpts createOptions, l
 	baseCopyOptions.FindPredecessors = func(ctx context.Context, src content.ReadOnlyGraphStorage, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
 		return graph.Referrers(ctx, src, desc, "")
 	}
-	const (
-		promptExists  = "Exists "
-		promptCopying = "Copying"
-		promptCopied  = "Copied "
-		promptSkipped = "Skipped"
-		promptMounted = "Mouned "
-	)
 	var onMounted func(context.Context, ocispec.Descriptor) error
 	if destOpts.TTY == nil {
 		// none TTY output
@@ -260,10 +263,6 @@ func doPack(ctx context.Context, t oras.Target, manifests []ocispec.Descriptor, 
 		Size:      int64(len(content)),
 	}
 
-	const (
-		promptUploading = "Uploading"
-		promptUploaded  = "Uploaded "
-	)
 	if opts.TTY == nil {
 		// none TTY output
 		if err := display.PrintStatus(desc, promptUploading, opts.Verbose); err != nil {
