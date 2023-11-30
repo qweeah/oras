@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"slices"
 	"sync"
 
@@ -32,6 +33,7 @@ import (
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/errdef"
+	"oras.land/oras-go/v2/registry"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras/cmd/oras/internal/display"
 	"oras.land/oras/cmd/oras/internal/display/track"
@@ -119,6 +121,8 @@ func createManifest(ctx context.Context, opts createOptions) error {
 }
 
 func doCopy(ctx context.Context, dst oras.GraphTarget, destOpts createOptions, logger logrus.FieldLogger) ([]ocispec.Descriptor, error) {
+	// Prepare dest target
+	dstAsRemote, dstIsRemote := dst.(*remote.Repository)
 	// Prepare copy options
 	committed := &sync.Map{}
 	baseCopyOptions := oras.DefaultExtendedCopyOptions
@@ -182,7 +186,6 @@ func doCopy(ctx context.Context, dst oras.GraphTarget, destOpts createOptions, l
 	// copy all manifests
 	rOpts := oras.DefaultResolveOptions
 	var copied []ocispec.Descriptor
-	dstAsRemote, dstIsRemote := dst.(*remote.Repository)
 	for _, srcOpts := range destOpts.srcs {
 		var err error
 		// prepare src target
@@ -223,6 +226,22 @@ func doCopy(ctx context.Context, dst oras.GraphTarget, destOpts createOptions, l
 	return copied, nil
 }
 
+func doPushReference(ctx context.Context, desc ocispec.Descriptor, ref string, dst oras.Target, content io.Reader) error {
+	if refPusher, ok := dst.(registry.ReferencePusher); ok {
+		return refPusher.PushReference(ctx, desc, content, ref)
+	}
+	if err := dst.Push(ctx, desc, content); err != nil {
+		w := errors.Unwrap(err)
+		if w != errdef.ErrAlreadyExists {
+			return err
+		}
+	}
+	if ref == "" {
+		return nil
+	}
+	return dst.Tag(ctx, desc, ref)
+}
+
 func doPack(ctx context.Context, t oras.Target, manifests []ocispec.Descriptor, opts createOptions) error {
 	// todo: oras-go needs PackIndex
 	index := ocispec.Index{
@@ -250,11 +269,8 @@ func doPack(ctx context.Context, t oras.Target, manifests []ocispec.Descriptor, 
 		if err := display.PrintStatus(desc, promptUploading, opts.Verbose); err != nil {
 			return err
 		}
-		if err := t.Push(ctx, desc, reader); err != nil {
-			w := errors.Unwrap(err)
-			if w != errdef.ErrAlreadyExists {
-				return err
-			}
+		if err := doPushReference(ctx, desc, opts.Reference, t, reader); err != nil {
+			return err
 		}
 		return display.PrintStatus(desc, promptUploaded, opts.Verbose)
 	}
@@ -266,11 +282,8 @@ func doPack(ctx context.Context, t oras.Target, manifests []ocispec.Descriptor, 
 	}
 	defer trackedReader.StopManager()
 	trackedReader.Start()
-	if err := t.Push(ctx, desc, trackedReader); err != nil {
-		w := errors.Unwrap(err)
-		if w != errdef.ErrAlreadyExists {
-			return err
-		}
+	if err := doPushReference(ctx, desc, opts.Reference, t, trackedReader); err != nil {
+		return err
 	}
 	trackedReader.Done()
 	return nil
