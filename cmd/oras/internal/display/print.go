@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"reflect"
 	"sync"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -31,7 +30,7 @@ import (
 
 var (
 	printLock sync.Mutex
-	to        io.Writer
+	to        *os.File
 )
 
 func init() {
@@ -39,11 +38,11 @@ func init() {
 }
 
 // Set sets the output writer for printing.
-func Set(template string, tty io.Writer) {
+func Set(template string, tty *os.File) {
 	printLock.Lock()
 	defer printLock.Unlock()
-	if template != "" {
-		to = tty
+	if template != "" || tty != nil {
+		to = nil
 	}
 }
 
@@ -55,7 +54,7 @@ func Print(a ...any) error {
 	printLock.Lock()
 	defer printLock.Unlock()
 
-	if reflect.ValueOf(to).IsNil() {
+	if to == nil {
 		return nil
 	}
 	_, err := fmt.Fprintln(to, a...)
