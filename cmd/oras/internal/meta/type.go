@@ -22,6 +22,13 @@ type DigestReference struct {
 	Reference string `json:"reference"`
 }
 
+// ToDigestReference converts a name and digest to a digest reference.
+func ToDigestReference(name string, digest string) DigestReference {
+	return DigestReference{
+		Reference: name + "@" + digest,
+	}
+}
+
 // Descriptor is a descriptor with digest reference.
 type Descriptor struct {
 	DigestReference
@@ -31,9 +38,7 @@ type Descriptor struct {
 // ToDescriptor converts a descriptor to a descriptor with digest reference.
 func ToDescriptor(name string, desc ocispec.Descriptor) Descriptor {
 	return Descriptor{
-		DigestReference: DigestReference{
-			Reference: name + "@" + desc.Digest.String(),
-		},
-		Descriptor: desc,
+		DigestReference: ToDigestReference(name, desc.Digest.String()),
+		Descriptor:      desc,
 	}
 }

@@ -18,7 +18,6 @@ package manifest
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 
@@ -26,7 +25,10 @@ import (
 	"github.com/spf13/cobra"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/registry/remote"
+	"oras.land/oras/cmd/oras/internal/display"
+	"oras.land/oras/cmd/oras/internal/meta"
 	"oras.land/oras/cmd/oras/internal/option"
+	"oras.land/oras/internal/docker"
 )
 
 type fetchOptions struct {
@@ -36,6 +38,7 @@ type fetchOptions struct {
 	option.Platform
 	option.Pretty
 	option.Target
+	option.Format
 
 	mediaTypes []string
 	outputPath string
@@ -71,14 +74,27 @@ Example - Fetch raw manifest from an OCI layout archive file 'layout.tar':
 `,
 		Args: cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if opts.outputPath == "-" && opts.OutputDescriptor {
-				return errors.New("`--output -` cannot be used with `--descriptor` at the same time")
+			toCheck := []struct {
+				name      string
+				isPresent func() bool
+			}{
+				{"--output -", func() bool { return opts.outputPath == "-" }},
+				{"--format", func() bool { return opts.Template != "" }},
+				{"--descriptor", func() bool { return opts.OutputDescriptor }},
+			}
+			for i := range toCheck {
+				for j := i + 1; j < len(toCheck); j++ {
+					if toCheck[i].isPresent() && toCheck[j].isPresent() {
+						return fmt.Errorf("`%s` cannot be used with `%s` at the same time", toCheck[i].name, toCheck[j].name)
+					}
+				}
 			}
 			opts.RawReference = args[0]
 			return option.Parse(&opts)
 		},
 		Aliases: []string{"get"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			display.Set(opts.Template, opts.TTY)
 			return fetchManifest(cmd.Context(), opts)
 		},
 	}
@@ -129,7 +145,24 @@ func fetchManifest(ctx context.Context, opts fetchOptions) (fetchErr error) {
 			return fmt.Errorf("failed to fetch the content of %q: %w", opts.RawReference, err)
 		}
 
-		if opts.outputPath == "" || opts.outputPath == "-" {
+		if opts.Template != "" {
+			// output formatted data
+			switch desc.MediaType {
+			case ocispec.MediaTypeImageManifest, docker.MediaTypeManifest:
+				var manifest ocispec.Manifest
+				if err := json.Unmarshal(content, &manifest); err != nil {
+					return err
+				}
+				if err := json.Unmarshal(content, &manifest); err != nil {
+					return err
+				}
+				if err = opts.WriteTo(os.Stdout, meta.NewManifestFetch(opts.outputPath, desc.Digest.String(), manifest)); err != nil {
+					return err
+				}
+			default:
+				return fmt.Errorf("cannot apply template to %q: unsupported media type %s", opts.RawReference, desc.MediaType)
+			}
+		} else if opts.outputPath == "" || opts.outputPath == "-" {
 			// output manifest content
 			return opts.Output(os.Stdout, content)
 		}
@@ -148,6 +181,5 @@ func fetchManifest(ctx context.Context, opts fetchOptions) (fetchErr error) {
 		}
 		return opts.Output(os.Stdout, descBytes)
 	}
-
 	return nil
 }
