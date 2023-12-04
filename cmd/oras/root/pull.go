@@ -303,10 +303,6 @@ func doPull(ctx context.Context, src oras.ReadOnlyTarget, dst oras.GraphTarget, 
 				return nil
 			}
 			name = desc.MediaType
-		} else {
-			result.filesLock.Lock()
-			result.files = append(result.files, meta.NewFile(name, po.Output, desc, fmt.Sprintf("%s@%s", po.Path, desc.Digest)))
-			result.filesLock.Unlock()
 		}
 		printed.Store(generateContentKey(desc), true)
 		if po.TTY == nil {
