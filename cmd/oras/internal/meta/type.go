@@ -27,3 +27,13 @@ type Descriptor struct {
 	DigestReference
 	ocispec.Descriptor
 }
+
+// ToDescriptor converts a descriptor to a descriptor with digest reference.
+func ToDescriptor(name string, desc ocispec.Descriptor) Descriptor {
+	return Descriptor{
+		DigestReference: DigestReference{
+			Reference: name + "@" + desc.Digest.String(),
+		},
+		Descriptor: desc,
+	}
+}

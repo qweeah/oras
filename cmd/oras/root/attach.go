@@ -192,5 +192,5 @@ func runAttach(ctx context.Context, opts attachOptions) error {
 	if err = opts.ExportManifest(ctx, store, root); err != nil {
 		return err
 	}
-	return opts.WriteTo(os.Stdout, meta.NewPush(root, fmt.Sprintf("%s@%s", opts.Path, root.Digest)))
+	return opts.WriteTo(os.Stdout, meta.NewPush(root, opts.Path))
 }

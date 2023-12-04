@@ -27,20 +27,15 @@ type File struct {
 }
 
 // NewFile creates a new file metadata.
-func NewFile(name string, outputDir string, desc ocispec.Descriptor, digestReference string) File {
+func NewFile(name string, outputDir string, desc ocispec.Descriptor, descPath string) File {
 	path := name
 	if !filepath.IsAbs(name) {
 		// ignore error since it's successfully written to file store
 		path, _ = filepath.Abs(filepath.Join(outputDir, name))
 	}
 	return File{
-		Path: path,
-		Descriptor: Descriptor{
-			Descriptor: desc,
-			DigestReference: DigestReference{
-				Reference: digestReference,
-			},
-		},
+		Path:       path,
+		Descriptor: ToDescriptor(descPath, desc),
 	}
 }
 

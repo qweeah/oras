@@ -22,13 +22,8 @@ type push struct {
 }
 
 // NewPush creates a new push metadata
-func NewPush(descriptor ocispec.Descriptor, reference string) push {
+func NewPush(desc ocispec.Descriptor, path string) push {
 	return push{
-		Descriptor: Descriptor{
-			DigestReference: DigestReference{
-				Reference: reference,
-			},
-			Descriptor: descriptor,
-		},
+		Descriptor: ToDescriptor(path, desc),
 	}
 }
