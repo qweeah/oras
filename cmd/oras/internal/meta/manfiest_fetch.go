@@ -21,7 +21,6 @@ import (
 
 type manifestFetch struct {
 	DigestReference
-	Config Descriptor   `json:"config"`
 	Layers []Descriptor `json:"layers"`
 }
 
