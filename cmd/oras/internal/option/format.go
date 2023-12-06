@@ -30,7 +30,14 @@ type Format struct {
 
 // ApplyFlag implements FlagProvider.ApplyFlag
 func (opts *Format) ApplyFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&opts.Template, "format", "", `Format output with go template syntax`)
+	name := "format"
+	if fs.Lookup(name) != nil {
+		// allow CMD to overwrite the flag
+		return
+	}
+	fs.StringVar(&opts.Template, "format", "", `Format output using a custom template:
+'json':       Print in JSON format
+'$TEMPLATE':  Print output using the given Go template.`)
 }
 
 func (opts *Format) WriteTo(w io.Writer, data interface{}) error {

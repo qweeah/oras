@@ -28,6 +28,9 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"oras.land/oras-go/v2"
+	"oras.land/oras/cmd/oras/internal/display"
+	"oras.land/oras/cmd/oras/internal/errors"
+	oerrors "oras.land/oras/cmd/oras/internal/errors"
 	"oras.land/oras/cmd/oras/internal/option"
 	"oras.land/oras/internal/graph"
 	"oras.land/oras/internal/tree"
@@ -37,6 +40,7 @@ type discoverOptions struct {
 	option.Common
 	option.Platform
 	option.Target
+	option.Format
 
 	artifactType string
 	outputType   string
@@ -75,16 +79,28 @@ Example - Discover referrers of the manifest tagged 'v1' in an OCI image layout 
 `,
 		Args: cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if opts.outputType != "" && opts.Template != "" {
+				return fmt.Errorf("cannot use both --output and --format")
+			}
+			if opts.outputType == "" && opts.Template == "" {
+				opts.Template = "tree"
+			}
 			opts.RawReference = args[0]
 			return option.Parse(&opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			display.Set(opts.Template, opts.TTY)
 			return runDiscover(cmd.Context(), opts)
 		},
 	}
 
 	cmd.Flags().StringVarP(&opts.artifactType, "artifact-type", "", "", "artifact type")
-	cmd.Flags().StringVarP(&opts.outputType, "output", "o", "table", "format in which to display referrers (table, json, or tree). tree format will also show indirect referrers")
+	cmd.Flags().StringVarP(&opts.outputType, "output", "o", "", "[Deprecated] format in which to display referrers (table, json, or tree). tree format will also show indirect referrers")
+	cmd.Flags().StringVar(&opts.Template, "format", "", `Format output using a custom template:
+'tree':       Get referrers recursively and print in tree format (default)
+'table':      Get direct referrers and output in table format
+'json':       Get direct referrers and output in JSON format
+'$TEMPLATE':  Print output using the given Go template.`)
 	opts.EnableDistributionSpecFlag()
 	option.ApplyFlags(&opts, cmd.Flags())
 	return cmd
@@ -108,34 +124,63 @@ func runDiscover(ctx context.Context, opts discoverOptions) error {
 		return err
 	}
 
-	if opts.outputType == "tree" {
+	if opts.Template != "" {
+		if err := output(ctx, opts.Template, opts, desc, repo); err != errors.ErrInvalidOutputType {
+			// done or unexpected error
+			return err
+		}
+		// formatting as index
+		refs, err := graph.Referrers(ctx, repo, desc, opts.artifactType)
+		if err != nil {
+			return err
+		}
+		return opts.WriteTo(os.Stdout, ocispec.Index{
+			Versioned: specs.Versioned{
+				SchemaVersion: 2, // historical value. does not pertain to OCI or docker version
+			},
+			MediaType: ocispec.MediaTypeImageIndex,
+			Manifests: refs,
+		})
+	}
+	fmt.Fprintf(os.Stderr, "[DEPRECATED] --output is deprecated, try `--format %s` instead\n", opts.outputType)
+	return output(ctx, opts.Template, opts, desc, repo)
+}
+
+func output(ctx context.Context, outputType string, opts discoverOptions, desc ocispec.Descriptor, repo option.ReadOnlyGraphTagFinderTarget) error {
+	if outputType == "tree" || outputType == "" {
+		// default to tree output
 		root := tree.New(fmt.Sprintf("%s@%s", opts.Path, desc.Digest))
-		err = fetchAllReferrers(ctx, repo, desc, opts.artifactType, root, &opts)
+		err := fetchAllReferrers(ctx, repo, desc, opts.artifactType, root, &opts)
 		if err != nil {
 			return err
 		}
 		return tree.Print(root)
 	}
 
-	refs, err := graph.Referrers(ctx, repo, desc, opts.artifactType)
-	if err != nil {
-		return err
-	}
-	if opts.outputType == "json" {
-		return printDiscoveredReferrersJSON(desc, refs)
-	}
+	switch outputType {
+	case "table", "json":
+		refs, err := graph.Referrers(ctx, repo, desc, opts.artifactType)
+		if err != nil {
+			return err
+		}
+		if outputType == "json" {
+			return printDiscoveredReferrersJSON(desc, refs)
+		}
 
-	if n := len(refs); n > 1 {
-		fmt.Println("Discovered", n, "artifacts referencing", opts.Reference)
-	} else {
-		fmt.Println("Discovered", n, "artifact referencing", opts.Reference)
+		if outputType == "table" {
+			if n := len(refs); n > 1 {
+				fmt.Println("Discovered", n, "artifacts referencing", opts.Reference)
+			} else {
+				fmt.Println("Discovered", n, "artifact referencing", opts.Reference)
+			}
+			fmt.Println("Digest:", desc.Digest)
+			if len(refs) > 0 {
+				fmt.Println()
+				return printDiscoveredReferrersTable(refs, opts.Verbose)
+			}
+		}
 	}
-	fmt.Println("Digest:", desc.Digest)
-	if len(refs) > 0 {
-		fmt.Println()
-		_ = printDiscoveredReferrersTable(refs, opts.Verbose)
-	}
-	return nil
+	return oerrors.ErrInvalidOutputType
 }
 
 func fetchAllReferrers(ctx context.Context, repo oras.ReadOnlyGraphTarget, desc ocispec.Descriptor, artifactType string, node *tree.Node, opts *discoverOptions) error {

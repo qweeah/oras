@@ -156,7 +156,7 @@ func fetchManifest(ctx context.Context, opts fetchOptions) (fetchErr error) {
 				if err := json.Unmarshal(content, &manifest); err != nil {
 					return err
 				}
-				if err = opts.WriteTo(os.Stdout, meta.NewManifestFetch(opts.outputPath, desc.Digest.String(), manifest)); err != nil {
+				if err = opts.WriteTo(os.Stdout, meta.NewManifestFetch(opts.Path, desc.Digest.String(), manifest)); err != nil {
 					return err
 				}
 			default:
@@ -165,10 +165,8 @@ func fetchManifest(ctx context.Context, opts fetchOptions) (fetchErr error) {
 		} else if opts.outputPath == "" || opts.outputPath == "-" {
 			// output manifest content
 			return opts.Output(os.Stdout, content)
-		}
-
-		// save manifest content into the local file if the output path is provided
-		if err = os.WriteFile(opts.outputPath, content, 0666); err != nil {
+		} else if err = os.WriteFile(opts.outputPath, content, 0666); err != nil {
+			// save manifest content into the local file if the output path is provided
 			return err
 		}
 	}

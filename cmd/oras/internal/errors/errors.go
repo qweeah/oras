@@ -16,10 +16,13 @@ limitations under the License.
 package errors
 
 import (
+	"errors"
 	"fmt"
 
 	"oras.land/oras-go/v2/registry"
 )
+
+var ErrInvalidOutputType = errors.New("Output type can only be tree, table or json")
 
 // NewErrEmptyTagOrDigest creates a new error based on the reference string.
 func NewErrEmptyTagOrDigest(ref registry.Reference) error {
