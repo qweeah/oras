@@ -16,6 +16,7 @@ limitations under the License.
 package option
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"text/template"
@@ -51,7 +52,9 @@ func (opts *Format) WriteTo(w io.Writer, data interface{}) error {
 		if err != nil {
 			return err
 		}
-		_, err = w.Write(b)
+		buf := bytes.NewBuffer(nil)
+		_ = json.Indent(buf, b, "", "  ")
+		_, err = w.Write(buf.Bytes())
 		if err != nil {
 			return err
 		}
