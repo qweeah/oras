@@ -89,6 +89,10 @@ Example - Fetch raw manifest from an OCI layout archive file 'layout.tar':
 					}
 				}
 			}
+
+			if opts.Template == "json" {
+				return fmt.Errorf("json format is not supported for manifest fetch")
+			}
 			opts.RawReference = args[0]
 			return option.Parse(&opts)
 		},
@@ -101,6 +105,7 @@ Example - Fetch raw manifest from an OCI layout archive file 'layout.tar':
 
 	cmd.Flags().StringSliceVarP(&opts.mediaTypes, "media-type", "", nil, "accepted media types")
 	cmd.Flags().StringVarP(&opts.outputPath, "output", "o", "", "file `path` to write the fetched manifest to, use - for stdout")
+	cmd.Flags().StringVar(&opts.Template, "format", "", `Print output using the given Go template.`)
 	option.ApplyFlags(&opts, cmd.Flags())
 	return cmd
 }

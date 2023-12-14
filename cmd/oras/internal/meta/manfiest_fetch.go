@@ -21,7 +21,7 @@ import (
 
 type manifestFetch struct {
 	DigestReference
-	Layers []Descriptor `json:"layers"`
+	Layers []Descriptor `json:"Layers"`
 }
 
 // NewManifestFetch creates a new manifest fetch metadata for formatting.

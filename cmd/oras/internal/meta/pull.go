@@ -22,7 +22,7 @@ import (
 )
 
 type File struct {
-	Path string `json:"path"`
+	Path string `json:"Path"`
 	Descriptor
 }
 
@@ -42,7 +42,7 @@ func NewFile(name string, outputDir string, desc ocispec.Descriptor, descPath st
 // Metadata for push command
 type pull struct {
 	DigestReference
-	Files []File `json:"files"`
+	Files []File `json:"Files"`
 }
 
 func NewPull(digestReference string, files []File) pull {
