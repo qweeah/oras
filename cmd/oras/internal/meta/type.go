@@ -22,13 +22,13 @@ import (
 
 // DigestReference is a reference to an artifact with digest.
 type DigestReference struct {
-	Reference string `json:"Ref"`
+	Ref string `json:"Ref"`
 }
 
 // ToDigestReference converts a name and digest to a digest reference.
 func ToDigestReference(name string, digest string) DigestReference {
 	return DigestReference{
-		Reference: name + "@" + digest,
+		Ref: name + "@" + digest,
 	}
 }
 
