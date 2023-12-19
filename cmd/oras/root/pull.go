@@ -290,7 +290,7 @@ func doPull(ctx context.Context, src oras.ReadOnlyTarget, dst oras.GraphTarget, 
 		for _, s := range successors {
 			if name, ok := s.Annotations[ocispec.AnnotationTitle]; ok {
 				result.filesLock.Lock()
-				result.files = append(result.files, meta.NewFile(name, po.Output, desc, po.Path))
+				result.files = append(result.files, meta.NewFile(name, po.Output, s, po.Path))
 				result.filesLock.Unlock()
 				if err := printOnce(&printed, s, promptRestored, po.Verbose, tracked); err != nil {
 					return err
