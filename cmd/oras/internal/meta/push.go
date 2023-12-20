@@ -18,7 +18,7 @@ package meta
 import ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 
 type push struct {
-	Descriptor Descriptor
+	Descriptor
 }
 
 // NewPush creates a new push metadata

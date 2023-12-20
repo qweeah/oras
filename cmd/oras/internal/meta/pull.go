@@ -22,8 +22,8 @@ import (
 )
 
 type File struct {
-	Path       string `json:"Path"`
-	Descriptor Descriptor
+	Path string `json:"Path"`
+	Descriptor
 }
 
 // NewFile creates a new file metadata.
