@@ -90,9 +90,6 @@ Example - Fetch raw manifest from an OCI layout archive file 'layout.tar':
 				}
 			}
 
-			if opts.Template == "json" {
-				return fmt.Errorf("json format is not supported for manifest fetch")
-			}
 			opts.RawReference = args[0]
 			return option.Parse(&opts)
 		},
@@ -151,28 +148,37 @@ func fetchManifest(ctx context.Context, opts fetchOptions) (fetchErr error) {
 		}
 
 		if opts.Template != "" {
-			// output formatted data
-			switch desc.MediaType {
-			case ocispec.MediaTypeImageManifest, docker.MediaTypeManifest:
-				var manifest ocispec.Manifest
-				if err := json.Unmarshal(content, &manifest); err != nil {
+			if opts.Template == "json" {
+				// output prettified json manifest content
+				opts.Pretty.Pretty = true
+				if err := opts.Output(os.Stdout, content); err != nil {
 					return err
 				}
-				if err := json.Unmarshal(content, &manifest); err != nil {
-					return err
+			} else {
+				// output formatted data
+				switch desc.MediaType {
+				case ocispec.MediaTypeImageManifest, docker.MediaTypeManifest:
+					var manifest ocispec.Manifest
+					if err := json.Unmarshal(content, &manifest); err != nil {
+						return err
+					}
+
+					if err = opts.WriteTo(os.Stdout, meta.ToMappable(manifest)); err != nil {
+						return err
+					}
+				default:
+					return fmt.Errorf("cannot apply template to %q: unsupported media type %s", opts.RawReference, desc.MediaType)
 				}
-				if err = opts.WriteTo(os.Stdout, meta.NewManifestFetch(opts.Path, desc.Digest.String(), manifest)); err != nil {
-					return err
-				}
-			default:
-				return fmt.Errorf("cannot apply template to %q: unsupported media type %s", opts.RawReference, desc.MediaType)
 			}
-		} else if opts.outputPath == "" || opts.outputPath == "-" {
-			// output manifest content
+		}
+		if opts.outputPath != "" {
+			if err = os.WriteFile(opts.outputPath, content, 0666); err != nil {
+				// save manifest content into the local file if the output path is provided
+				return err
+			}
+		} else if opts.Template == "" {
+			// output raw manifest content
 			return opts.Output(os.Stdout, content)
-		} else if err = os.WriteFile(opts.outputPath, content, 0666); err != nil {
-			// save manifest content into the local file if the output path is provided
-			return err
 		}
 	}
 

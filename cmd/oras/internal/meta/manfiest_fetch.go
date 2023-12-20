@@ -16,21 +16,50 @@ limitations under the License.
 package meta
 
 import (
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"reflect"
+	"unicode"
 )
 
-type manifestFetch struct {
-	DigestReference
-	Layers []Descriptor `json:"Layers"`
+// ToMappable converts any type with 1 or more fields into a map[string]interface{}.
+func ToMappable(in any) any {
+	v := reflect.ValueOf(in)
+	k := v.Kind()
+	switch k {
+	case reflect.Ptr, reflect.Interface:
+		if v.IsNil() {
+			return nil
+		}
+		return ToMappable(v.Elem().Interface())
+	case reflect.Struct:
+	default:
+		return v
+	}
+	t := reflect.TypeOf(in)
+	n := t.NumField()
+	ret := make(map[string]any)
+
+	for i := 0; i < n; i++ {
+		v := v.Field(i)
+		if !v.CanInterface() {
+			continue
+		}
+		t := t.Field(i)
+		rawName := t.Name
+		lowedName := lowerFieldName(rawName)
+		ret[lowedName] = ToMappable(v.Interface())
+	}
+	return ret
 }
 
-// NewManifestFetch creates a new manifest fetch metadata for formatting.
-func NewManifestFetch(path string, digest string, manifest ocispec.Manifest) manifestFetch {
-	mf := manifestFetch{
-		DigestReference: ToDigestReference(path, digest),
+func lowerFieldName(name string) string {
+	ret := ""
+	i := 0
+	for ; i < len(name); i++ {
+		c := rune(name[i])
+		if unicode.IsUpper(c) {
+			break
+		}
+		ret += string(unicode.ToLower(c))
 	}
-	for _, layer := range manifest.Layers {
-		mf.Layers = append(mf.Layers, ToDescriptor(path, layer))
-	}
-	return mf
+	return ret + name[i:]
 }
