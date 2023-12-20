@@ -56,7 +56,7 @@ func lowerFieldName(name string) string {
 	i := 0
 	for ; i < len(name); i++ {
 		c := rune(name[i])
-		if unicode.IsUpper(c) {
+		if !unicode.IsUpper(c) {
 			break
 		}
 		ret += string(unicode.ToLower(c))
