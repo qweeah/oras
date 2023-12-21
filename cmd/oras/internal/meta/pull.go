@@ -16,9 +16,11 @@ limitations under the License.
 package meta
 
 import (
+	"fmt"
 	"path/filepath"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"oras.land/oras-go/v2/content/file"
 )
 
 type File struct {
@@ -32,6 +34,9 @@ func NewFile(name string, outputDir string, desc ocispec.Descriptor, descPath st
 	if !filepath.IsAbs(name) {
 		// ignore error since it's successfully written to file store
 		path, _ = filepath.Abs(filepath.Join(outputDir, name))
+	}
+	if desc.Annotations[file.AnnotationUnpack] == "true" {
+		path = fmt.Sprintf("%s%c", path, filepath.Separator)
 	}
 	return File{
 		Path:       path,
