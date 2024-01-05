@@ -131,7 +131,7 @@ func runDiscover(ctx context.Context, opts discoverOptions) error {
 			return err
 		}
 		// formatting as index
-		refs, err := graph.Referrers(ctx, repo, desc, opts.artifactType)
+		refs, err := registry.Referrers(ctx, repo, desc, opts.artifactType)
 		if err != nil {
 			return err
 		}
