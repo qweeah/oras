@@ -28,11 +28,12 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"oras.land/oras-go/v2"
+	"oras.land/oras-go/v2/registry"
+	"oras.land/oras/cmd/oras/internal/argument"
 	"oras.land/oras/cmd/oras/internal/display"
 	"oras.land/oras/cmd/oras/internal/errors"
 	oerrors "oras.land/oras/cmd/oras/internal/errors"
 	"oras.land/oras/cmd/oras/internal/option"
-	"oras.land/oras/internal/graph"
 	"oras.land/oras/internal/tree"
 )
 
@@ -77,7 +78,7 @@ Example - Discover referrers of the manifest tagged 'v1' in an OCI image layout 
   oras discover --oci-layout layout-dir:v1
   oras discover --oci-layout -v -o tree layout-dir:v1
 `,
-		Args: cobra.ExactArgs(1),
+		Args: oerrors.CheckArgs(argument.Exactly(1), "the target artifact to discover referrers from"),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if opts.outputType != "" && opts.Template != "" {
 				return fmt.Errorf("cannot use both --output and --format")
@@ -159,7 +160,7 @@ func output(ctx context.Context, outputType string, opts discoverOptions, desc o
 
 	switch outputType {
 	case "table", "json":
-		refs, err := graph.Referrers(ctx, repo, desc, opts.artifactType)
+		refs, err := registry.Referrers(ctx, repo, desc, opts.artifactType)
 		if err != nil {
 			return err
 		}
@@ -184,7 +185,7 @@ func output(ctx context.Context, outputType string, opts discoverOptions, desc o
 }
 
 func fetchAllReferrers(ctx context.Context, repo oras.ReadOnlyGraphTarget, desc ocispec.Descriptor, artifactType string, node *tree.Node, opts *discoverOptions) error {
-	results, err := graph.Referrers(ctx, repo, desc, artifactType)
+	results, err := registry.Referrers(ctx, repo, desc, artifactType)
 	if err != nil {
 		return err
 	}
