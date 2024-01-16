@@ -17,49 +17,35 @@ package meta
 
 import (
 	"reflect"
-	"unicode"
+	"strings"
 )
 
-// ToMappable converts any type with 1 or more fields into a map[string]interface{}.
-func ToMappable(in any) any {
-	v := reflect.ValueOf(in)
-	k := v.Kind()
-	switch k {
+// ToMappable converts any struct into a map[string]interface{} with camel-case
+// field names.
+func ToMappable(v reflect.Value) any {
+	valueKind := v.Kind()
+	switch valueKind {
+	case reflect.Struct:
 	case reflect.Ptr, reflect.Interface:
 		if v.IsNil() {
 			return nil
 		}
-		return ToMappable(v.Elem().Interface())
-	case reflect.Struct:
+		elem := ToMappable(v.Elem())
+		return &elem
 	default:
-		return v
+		return v.Interface()
 	}
-	t := reflect.TypeOf(in)
-	n := t.NumField()
+	t := v.Type()
+	numField := t.NumField()
 	ret := make(map[string]any)
-
-	for i := 0; i < n; i++ {
+	for i := 0; i < numField; i++ {
 		v := v.Field(i)
-		if !v.CanInterface() {
+		tag := t.Field(i).Tag.Get("json")
+		if tag == "" {
 			continue
 		}
-		t := t.Field(i)
-		rawName := t.Name
-		lowedName := lowerFieldName(rawName)
-		ret[lowedName] = ToMappable(v.Interface())
+		key, _, _ := strings.Cut(tag, ",")
+		ret[key] = ToMappable(v)
 	}
 	return ret
-}
-
-func lowerFieldName(name string) string {
-	ret := ""
-	i := 0
-	for ; i < len(name); i++ {
-		c := rune(name[i])
-		if !unicode.IsUpper(c) {
-			break
-		}
-		ret += string(unicode.ToLower(c))
-	}
-	return ret + name[i:]
 }

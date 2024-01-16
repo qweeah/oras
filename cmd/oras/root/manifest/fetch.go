@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
@@ -165,7 +166,7 @@ func fetchManifest(ctx context.Context, opts fetchOptions) (fetchErr error) {
 						return err
 					}
 
-					if err = opts.WriteTo(os.Stdout, meta.ToMappable(manifest)); err != nil {
+					if err = opts.WriteTo(os.Stdout, meta.ToMappable(reflect.ValueOf(manifest))); err != nil {
 						return err
 					}
 				default:
