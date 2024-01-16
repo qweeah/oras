@@ -20,32 +20,36 @@ import (
 	"strings"
 )
 
-// ToMappable converts any struct into a map[string]interface{} with camel-case
-// field names.
+// ToMappable converts an reflect value into a map[string]any with json tags as
+// key.
 func ToMappable(v reflect.Value) any {
-	valueKind := v.Kind()
-	switch valueKind {
+	switch v.Kind() {
 	case reflect.Struct:
+		t := v.Type()
+		numField := t.NumField()
+		ret := make(map[string]any)
+		for i := 0; i < numField; i++ {
+			fv := v.Field(i)
+			tag := t.Field(i).Tag.Get("json")
+			if tag == "" {
+				continue
+			}
+			key, _, _ := strings.Cut(tag, ",")
+			ret[key] = ToMappable(fv)
+		}
+		return ret
+	case reflect.Slice, reflect.Array:
+		ret := make([]any, v.Len())
+		for i := 0; i < v.Len(); i++ {
+			ret[i] = ToMappable(v.Index(i))
+		}
+		return ret
 	case reflect.Ptr, reflect.Interface:
 		if v.IsNil() {
 			return nil
 		}
 		elem := ToMappable(v.Elem())
 		return &elem
-	default:
-		return v.Interface()
 	}
-	t := v.Type()
-	numField := t.NumField()
-	ret := make(map[string]any)
-	for i := 0; i < numField; i++ {
-		v := v.Field(i)
-		tag := t.Field(i).Tag.Get("json")
-		if tag == "" {
-			continue
-		}
-		key, _, _ := strings.Cut(tag, ",")
-		ret[key] = ToMappable(v)
-	}
-	return ret
+	return v.Interface()
 }
