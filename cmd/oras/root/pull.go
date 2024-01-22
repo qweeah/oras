@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"sync"
 	"sync/atomic"
 
@@ -33,6 +34,7 @@ import (
 	"oras.land/oras/cmd/oras/internal/display/track"
 	oerrors "oras.land/oras/cmd/oras/internal/errors"
 	"oras.land/oras/cmd/oras/internal/fileref"
+	"oras.land/oras/cmd/oras/internal/meta"
 	"oras.land/oras/cmd/oras/internal/option"
 	"oras.land/oras/internal/graph"
 )
@@ -42,6 +44,7 @@ type pullOptions struct {
 	option.Common
 	option.Platform
 	option.Target
+	option.Format
 
 	concurrency       int
 	KeepOldFiles      bool
@@ -92,6 +95,7 @@ Example - Pull artifact files from an OCI layout archive 'layout.tar':
 			return option.Parse(&opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			display.Set(opts.Template, opts.TTY)
 			return runPull(cmd, &opts)
 		},
 	}
@@ -103,7 +107,14 @@ Example - Pull artifact files from an OCI layout archive 'layout.tar':
 	cmd.Flags().StringVarP(&opts.ManifestConfigRef, "config", "", "", "output manifest config file")
 	cmd.Flags().IntVarP(&opts.concurrency, "concurrency", "", 3, "concurrency level")
 	option.ApplyFlags(&opts, cmd.Flags())
-	return oerrors.Command(cmd, &opts.Target)
+	return cmd
+}
+
+type pullResult struct {
+	files        []meta.File
+	root         ocispec.Descriptor
+	layerSkipped bool
+	filesLock    *sync.Mutex
 }
 
 func runPull(cmd *cobra.Command, opts *pullOptions) error {
@@ -133,7 +144,7 @@ func runPull(cmd *cobra.Command, opts *pullOptions) error {
 	dst.AllowPathTraversalOnWrite = opts.PathTraversal
 	dst.DisableOverwrite = opts.KeepOldFiles
 
-	desc, layerSkipped, err := doPull(ctx, src, dst, copyOptions, opts)
+	result, err := doPull(ctx, src, dst, copyOptions, opts)
 	if err != nil {
 		if errors.Is(err, file.ErrPathTraversalDisallowed) {
 			err = fmt.Errorf("%s: %w", "use flag --allow-path-traversal to allow insecurely pulling files outside of working directory", err)
@@ -142,23 +153,25 @@ func runPull(cmd *cobra.Command, opts *pullOptions) error {
 	}
 
 	// suggest oras copy for pulling layers without annotation
-	if layerSkipped {
-		fmt.Printf("Skipped pulling layers without file name in %q\n", ocispec.AnnotationTitle)
-		fmt.Printf("Use 'oras copy %s --to-oci-layout <layout-dir>' to pull all layers.\n", opts.RawReference)
+	if result.layerSkipped {
+		display.Print("Skipped pulling layers without file name in", ocispec.AnnotationTitle)
+		display.Print("Use 'oras copy", opts.RawReference, "--to-oci-layout <layout-dir>' to pull all layers.")
 	} else {
-		fmt.Println("Pulled", opts.AnnotatedReference())
-		fmt.Println("Digest:", desc.Digest)
+		display.Print("Pulled", opts.AnnotatedReference())
+		display.Print("Digest:", result.root.Digest)
 	}
-	return nil
+	return opts.WriteTo(os.Stdout, meta.NewPull(fmt.Sprintf("%s@%s", opts.Path, result.root.Digest), result.files))
 }
 
-func doPull(ctx context.Context, src oras.ReadOnlyTarget, dst oras.GraphTarget, opts oras.CopyOptions, po *pullOptions) (ocispec.Descriptor, bool, error) {
+func doPull(ctx context.Context, src oras.ReadOnlyTarget, dst oras.GraphTarget, opts oras.CopyOptions, po *pullOptions) (pullResult, error) {
+	var result pullResult
+	result.filesLock = &sync.Mutex{}
 	var configPath, configMediaType string
 	var err error
 	if po.ManifestConfigRef != "" {
 		configPath, configMediaType, err = fileref.Parse(po.ManifestConfigRef, "")
 		if err != nil {
-			return ocispec.Descriptor{}, false, err
+			return result, err
 		}
 	}
 
@@ -173,7 +186,7 @@ func doPull(ctx context.Context, src oras.ReadOnlyTarget, dst oras.GraphTarget, 
 
 	dst, err = getTrackedTarget(dst, po.TTY, "Downloading", "Pulled     ")
 	if err != nil {
-		return ocispec.Descriptor{}, false, err
+		return result, err
 	}
 	if tracked, ok := dst.(track.GraphTarget); ok {
 		defer tracked.Close()
@@ -276,7 +289,10 @@ func doPull(ctx context.Context, src oras.ReadOnlyTarget, dst oras.GraphTarget, 
 			return err
 		}
 		for _, s := range successors {
-			if _, ok := s.Annotations[ocispec.AnnotationTitle]; ok {
+			if name, ok := s.Annotations[ocispec.AnnotationTitle]; ok {
+				result.filesLock.Lock()
+				result.files = append(result.files, meta.NewFile(name, po.Output, s, po.Path))
+				result.filesLock.Unlock()
 				if err := printOnce(&printed, s, promptRestored, po.Verbose, dst); err != nil {
 					return err
 				}
@@ -290,12 +306,19 @@ func doPull(ctx context.Context, src oras.ReadOnlyTarget, dst oras.GraphTarget, 
 			name = desc.MediaType
 		}
 		printed.Store(generateContentKey(desc), true)
-		return display.Print(promptDownloaded, display.ShortDigest(desc), name)
+		if po.TTY == nil {
+			// none TTY, print status log for downloaded
+			return display.Print(promptDownloaded, display.ShortDigest(desc), name)
+		}
+		// TTY
+		return nil
 	}
 
 	// Copy
 	desc, err := oras.Copy(ctx, src, po.Reference, dst, po.Reference, opts)
-	return desc, layerSkipped.Load(), err
+	result.root = desc
+	result.layerSkipped = layerSkipped.Load()
+	return result, err
 }
 
 // generateContentKey generates a unique key for each content descriptor, using
