@@ -21,9 +21,8 @@ import (
 	"testing"
 )
 
-func TestFormat_WriteTo_marshalFailure(t *testing.T) {
-	opts := Format{Template: "json"}
-	err := opts.WriteTo(nil, make(chan int))
+func Test_WriteTo_marshalFailure(t *testing.T) {
+	err := WriteTo(nil, "json", make(chan int))
 	if err == nil {
 		t.Errorf("expected json marshal error")
 	}
@@ -35,17 +34,15 @@ func (w *invalidWriter) Write(p []byte) (n int, err error) {
 	return 0, errors.New("failed")
 }
 
-func TestFormat_WriteTo_writeFailure(t *testing.T) {
-	opts := Format{Template: "json"}
-	err := opts.WriteTo(&invalidWriter{}, nil)
+func Test_WriteTo_writeFailure(t *testing.T) {
+	err := WriteTo(&invalidWriter{}, "json", nil)
 	if err == nil {
 		t.Errorf("expected json marshal error")
 	}
 }
 
-func TestFormat_WriteTo_invalidTemplate(t *testing.T) {
-	opts := Format{Template: "{{}"}
-	err := opts.WriteTo(io.Discard, nil)
+func Test_WriteTo_invalidTemplate(t *testing.T) {
+	err := WriteTo(io.Discard, "{{}", nil)
 	if err == nil {
 		t.Errorf("expected template parsing error")
 	}

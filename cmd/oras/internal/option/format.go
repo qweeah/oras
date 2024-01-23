@@ -41,8 +41,9 @@ func (opts *Format) ApplyFlags(fs *pflag.FlagSet) {
 '$TEMPLATE':  Print output using the given Go template.`)
 }
 
-func (opts *Format) WriteTo(w io.Writer, data interface{}) error {
-	switch opts.Template {
+// WriteTo writes the data to the given writer using the given format.
+func WriteTo(w io.Writer, format string, data interface{}) error {
+	switch format {
 	case "":
 		return nil
 	case "json":
@@ -62,7 +63,7 @@ func (opts *Format) WriteTo(w io.Writer, data interface{}) error {
 		// go templating
 		var err error
 		t := template.New("out").Funcs(sprig.FuncMap())
-		t, err = t.Parse(opts.Template)
+		t, err = t.Parse(format)
 		if err != nil {
 			return err
 		}

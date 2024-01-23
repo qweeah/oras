@@ -192,5 +192,5 @@ func runAttach(cmd *cobra.Command, opts *attachOptions) error {
 	if err = opts.ExportManifest(ctx, store, root); err != nil {
 		return err
 	}
-	return opts.WriteTo(os.Stdout, meta.NewPush(root, opts.Path))
+	return option.WriteTo(os.Stdout, opts.Template, meta.NewPush(root, opts.Path))
 }

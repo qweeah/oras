@@ -160,7 +160,7 @@ func runPull(cmd *cobra.Command, opts *pullOptions) error {
 		display.Print("Pulled", opts.AnnotatedReference())
 		display.Print("Digest:", result.root.Digest)
 	}
-	return opts.WriteTo(os.Stdout, meta.NewPull(fmt.Sprintf("%s@%s", opts.Path, result.root.Digest), result.files))
+	return option.WriteTo(os.Stdout, opts.Template, meta.NewPull(fmt.Sprintf("%s@%s", opts.Path, result.root.Digest), result.files))
 }
 
 func doPull(ctx context.Context, src oras.ReadOnlyTarget, dst oras.GraphTarget, opts oras.CopyOptions, po *pullOptions) (pullResult, error) {
