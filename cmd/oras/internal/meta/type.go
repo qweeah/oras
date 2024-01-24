@@ -88,6 +88,7 @@ func ToDescriptor(name string, desc ocispec.Descriptor) Descriptor {
 		URLs:            desc.URLs,
 		Annotations:     desc.Annotations,
 		Data:            desc.Data,
+		ArtifactType:    desc.ArtifactType,
 	}
 	return ret
 }
