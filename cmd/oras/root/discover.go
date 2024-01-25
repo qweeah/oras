@@ -175,6 +175,7 @@ func output(ctx context.Context, outputType string, opts *discoverOptions, desc 
 				fmt.Println()
 				return printDiscoveredReferrersTable(refs, opts.Verbose)
 			}
+			return nil
 		}
 	}
 	return ErrInvalidOutputType
