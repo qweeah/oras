@@ -238,6 +238,12 @@ var _ = Describe("1.1 registry users:", func() {
 				MatchContent(multi_arch.LinuxAMD64Manifest).Exec()
 		})
 
+		It("should fetch manifest with platform validation and output jsib", Focus, func() {
+			out := ORAS("manifest", "fetch", RegistryRef(ZOTHost, ImageRepo, multi_arch.LinuxAMD64.Digest.String()), "--platform", "linux/amd64").
+				Exec().Out.Contents()
+			Expect(out).To(MatchJSON(multi_arch.LinuxAMD64Manifest))
+		})
+
 		It("should fetch descriptor via digest", func() {
 			ORAS("manifest", "fetch", RegistryRef(ZOTHost, ImageRepo, multi_arch.Digest), "--descriptor").
 				MatchContent(multi_arch.Descriptor).Exec()
