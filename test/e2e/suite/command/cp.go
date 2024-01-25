@@ -265,7 +265,7 @@ var _ = Describe("1.1 registry users:", func() {
 				MatchKeyWords("Digest: " + ma.LinuxAMD64.Digest.String()).
 				Exec()
 			// validate
-			CompareRef(src, dst)
+			CompareRef(src, ma.LinuxAMD64.Digest.String())
 			digests := ORAS("discover", dst, "--format", "{{range .Manifests}}{{println .Digest}}{{end}}").Exec().Out.Contents()
 			for _, digest := range strings.Split(strings.TrimSpace(string(digests)), "\n") {
 				CompareRef(RegistryRef(ZOTHost, ArtifactRepo, digest), RegistryRef(ZOTHost, dstRepo, digest))
@@ -282,7 +282,7 @@ var _ = Describe("1.1 registry users:", func() {
 				MatchKeyWords("Digest: " + ma.LinuxAMD64.Digest.String()).
 				Exec()
 			// validate
-			CompareRef(src, dst)
+			CompareRef(src, RegistryRef(ZOTHost, dstRepo, ma.LinuxAMD64.Digest.String()))
 			digests := ORAS("discover", dst, "--format", "{{range .Manifests}}{{println .Digest}}{{end}}").Exec().Out.Contents()
 			for _, digest := range strings.Split(strings.TrimSpace(string(digests)), "\n") {
 				CompareRef(RegistryRef(ZOTHost, ArtifactRepo, digest), RegistryRef(ZOTHost, dstRepo, digest))
