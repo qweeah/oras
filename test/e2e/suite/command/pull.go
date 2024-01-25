@@ -43,7 +43,7 @@ var _ = Describe("ORAS beginners:", func() {
 		})
 
 		hintMsg := func(reference string) string {
-			return fmt.Sprintf("Skipped pulling layers without file name in \"org.opencontainers.image.title\"\nUse 'oras copy %s --to-oci-layout <layout-dir>' to pull all layers.\n", reference)
+			return fmt.Sprintf("Skipped pulling layers without file name in org.opencontainers.image.title\nUse 'oras copy %s --to-oci-layout <layout-dir>' to pull all layers.\n", reference)
 		}
 		It("should show hint for unnamed layer", func() {
 			tempDir := PrepareTempFiles()
