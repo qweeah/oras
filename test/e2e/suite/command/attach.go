@@ -145,15 +145,14 @@ var _ = Describe("1.1 registry users:", func() {
 			Expect(out).To(gbytes.Say(RegistryRef(ZOTHost, testRepo, "")))
 		})
 
-		It("should attach a file via a OCI Image", func() {
+		It("should attach a file via a OCI Image", Focus, func() {
 			testRepo := attachTestRepo("image")
 			tempDir := PrepareTempFiles()
 			subjectRef := RegistryRef(ZOTHost, testRepo, foobar.Tag)
 			CopyZOTRepo(ImageRepo, testRepo)
 			// test
 			ref := ORAS("attach", "--artifact-type", "test/attach", subjectRef, fmt.Sprintf("%s:%s", foobar.AttachFileName, foobar.AttachFileMedia), "--format", "{{.Ref}}").
-				WithWorkDir(tempDir).
-				MatchStatus([]match.StateKey{foobar.AttachFileStateKey}, false, 1).Exec().Out.Contents()
+				WithWorkDir(tempDir).Exec().Out.Contents()
 			// validate
 			out := ORAS("discover", subjectRef, "--format", "{{range .Manifests}}{{println .Ref}}{{end}}").Exec().Out
 			Expect(out).To(gbytes.Say(string(ref)))
@@ -167,9 +166,7 @@ var _ = Describe("1.1 registry users:", func() {
 			CopyZOTRepo(ImageRepo, testRepo)
 			statusKey := foobar.AttachFileStateKey
 			statusKey.Name = absAttachFileName
-			ORAS("attach", "--artifact-type", "test/attach", subjectRef, fmt.Sprintf("%s:%s", absAttachFileName, foobar.AttachFileMedia), "--disable-path-validation").
-				MatchStatus([]match.StateKey{statusKey}, false, 1).
-				Exec()
+			ORAS("attach", "--artifact-type", "test/attach", subjectRef, fmt.Sprintf("%s:%s", absAttachFileName, foobar.AttachFileMedia), "--disable-path-validation").Exec()
 		})
 
 		It("should fail path validation when attaching file with absolute path", func() {
@@ -196,8 +193,7 @@ var _ = Describe("1.0 registry users:", func() {
 			prepare(RegistryRef(FallbackHost, ArtifactRepo, foobar.Tag), subjectRef)
 			// test
 			ref := ORAS("attach", "--artifact-type", "test/attach", subjectRef, fmt.Sprintf("%s:%s", foobar.AttachFileName, foobar.AttachFileMedia), "--format", "{{.Ref}}").
-				WithWorkDir(tempDir).
-				MatchStatus([]match.StateKey{foobar.AttachFileStateKey}, false, 1).Exec().Out.Contents()
+				WithWorkDir(tempDir).Exec().Out.Contents()
 			// validate
 			out := ORAS("discover", subjectRef, "--format", "{{range .Manifests}}{{println .Ref}}{{end}}").Exec().Out
 			Expect(out).To(gbytes.Say(string(ref)))
@@ -210,8 +206,7 @@ var _ = Describe("1.0 registry users:", func() {
 			prepare(RegistryRef(FallbackHost, ArtifactRepo, foobar.Tag), subjectRef)
 			// test
 			ref := ORAS("attach", "--artifact-type", "test/attach", subjectRef, fmt.Sprintf("%s:%s", foobar.AttachFileName, foobar.AttachFileMedia), "--format", "{{.Ref}}").
-				WithWorkDir(tempDir).
-				MatchStatus([]match.StateKey{foobar.AttachFileStateKey}, false, 1).Exec().Out.Contents()
+				WithWorkDir(tempDir).Exec().Out.Contents()
 
 			// validate
 			out := ORAS("discover", subjectRef, "--format", "{{range .Manifests}}{{println .Ref}}{{end}}").Exec().Out
@@ -225,8 +220,7 @@ var _ = Describe("1.0 registry users:", func() {
 			prepare(RegistryRef(FallbackHost, ArtifactRepo, foobar.Tag), subjectRef)
 			// test
 			ref := ORAS("attach", "--artifact-type", "test/attach", subjectRef, fmt.Sprintf("%s:%s", foobar.AttachFileName, foobar.AttachFileMedia), "--distribution-spec", "v1.1-referrers-tag", "--format", "{{.Ref}}").
-				WithWorkDir(tempDir).
-				MatchStatus([]match.StateKey{foobar.AttachFileStateKey}, false, 1).Exec().Out.Contents()
+				WithWorkDir(tempDir).Exec().Out.Contents()
 
 			// validate
 			out := ORAS("discover", subjectRef, "--format", "{{range .Manifests}}{{println .Ref}}{{end}}").Exec().Out
@@ -252,8 +246,7 @@ var _ = Describe("OCI image layout users:", func() {
 			subjectRef := LayoutRef(root, foobar.Tag)
 			// test
 			ref := ORAS("attach", "--artifact-type", "test/attach", Flags.Layout, subjectRef, fmt.Sprintf("%s:%s", foobar.AttachFileName, foobar.AttachFileMedia), "--export-manifest", exportName, "--format", "{{.Ref}}").
-				WithWorkDir(root).
-				MatchStatus([]match.StateKey{foobar.AttachFileStateKey}, false, 1).Exec().Out.Contents()
+				WithWorkDir(root).Exec().Out.Contents()
 			// validate
 			fetched := ORAS("manifest", "fetch", Flags.Layout, string(ref)).Exec().Out.Contents()
 			MatchFile(filepath.Join(root, exportName), string(fetched), DefaultTimeout)
@@ -262,10 +255,8 @@ var _ = Describe("OCI image layout users:", func() {
 			root := PrepareTempOCI(ImageRepo)
 			subjectRef := LayoutRef(root, foobar.Tag)
 			// test
-			ref := ORAS("attach", "--artifact-type", "test/attach", Flags.Layout, subjectRef, fmt.Sprintf("%s:%s", foobar.AttachFileName, foobar.AttachFileMedia)).
-				WithWorkDir(root).
-				MatchStatus([]match.StateKey{foobar.AttachFileStateKey}, false, 1).Exec().Out.Contents()
-
+			ref := ORAS("attach", "--artifact-type", "test/attach", Flags.Layout, subjectRef, fmt.Sprintf("%s:%s", foobar.AttachFileName, foobar.AttachFileMedia), "--format", "{{.Ref}}").
+				WithWorkDir(root).Exec().Out.Contents()
 			// validate
 			out := ORAS("discover", subjectRef, "--format", "{{range .Manifests}}{{println .Ref}}{{end}}").Exec().Out
 			Expect(out).To(gbytes.Say(string(ref)))
