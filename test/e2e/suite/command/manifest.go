@@ -97,6 +97,15 @@ var _ = Describe("ORAS beginners:", func() {
 			It("should fail with suggestion if no tag or digest is provided", func() {
 				ORAS("manifest", "fetch", RegistryRef(ZOTHost, ImageRepo, "")).ExpectFailure().MatchErrKeyWords("Error:", "no tag or digest specified", "oras manifest fetch [flags] <name>{:<tag>|@<digest>}", "Please specify a reference").Exec()
 			})
+
+			It("should fail if stdout is used inpropriately", func() {
+				ORAS("manifest", "fetch", RegistryRef(ZOTHost, ImageRepo, foobar.Tag), "--output", "-", "--format", "test").
+					ExpectFailure().Exec()
+				ORAS("manifest", "fetch", RegistryRef(ZOTHost, ImageRepo, foobar.Tag), "--descriptor", "--format", "test").
+					ExpectFailure().Exec()
+				ORAS("manifest", "fetch", RegistryRef(ZOTHost, ImageRepo, foobar.Tag), "--output", "-", "--descriptor").
+					ExpectFailure().Exec()
+			})
 		})
 
 		When("running `manifest delete`", func() {
