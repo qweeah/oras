@@ -64,6 +64,12 @@ var _ = Describe("ORAS beginners:", func() {
 			ORAS("discover", RegistryRef(ZOTHost, ImageRepo, "")).ExpectFailure().MatchErrKeyWords("Error:", "no tag or digest specified", "oras discover").Exec()
 		})
 
+		It("should fail if both output and format flags are used", func() {
+			ORAS("discover", RegistryRef(ZOTHost, ImageRepo, foobar.Tag), "--format", "json", "--output", "json").
+				ExpectFailure().
+				Exec()
+		})
+
 		It("should fail and show detailed error description if no argument provided", func() {
 			err := ORAS("discover").ExpectFailure().Exec().Err
 			Expect(err).Should(gbytes.Say("Error"))
@@ -119,8 +125,13 @@ var _ = Describe("1.1 registry users:", func() {
 	})
 
 	When("running discover command with tree output", func() {
-		format := "tree"
 		referrers := []ocispec.Descriptor{foobar.SBOMImageReferrer, foobar.SBOMImageReferrer, foobar.SignatureImageReferrer, foobar.SignatureImageReferrer}
+		It("should show as tree by default", func() {
+			ORAS("discover", subjectRef).
+				MatchKeyWords(append(discoverKeyWords(false, referrers...), RegistryRef(ZOTHost, ArtifactRepo, foobar.Digest))...).
+				Exec()
+		})
+		format := "tree"
 		It("should discover all referrers of a subject", func() {
 			ORAS("discover", subjectRef, "-o", format).
 				MatchKeyWords(append(discoverKeyWords(false, referrers...), RegistryRef(ZOTHost, ArtifactRepo, foobar.Digest))...).
@@ -137,7 +148,6 @@ var _ = Describe("1.1 registry users:", func() {
 			ORAS("discover", subjectRef, "-o", format, "-v").
 				MatchKeyWords(append(discoverKeyWords(true, referrers...), RegistryRef(ZOTHost, ArtifactRepo, foobar.Digest))...).
 				Exec()
-
 		})
 	})
 	When("running discover command with table output", func() {
@@ -282,7 +292,6 @@ var _ = Describe("OCI image layout users:", func() {
 		})
 
 		It("should discover no matched referrer", func() {
-			// prepare
 			root := PrepareTempOCI(ArtifactRepo)
 			subjectRef := LayoutRef(root, foobar.Tag)
 			out := ORAS("discover", subjectRef, "-o", format, "--artifact-type", "???", Flags.Layout).Exec().Out
