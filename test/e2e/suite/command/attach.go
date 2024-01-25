@@ -145,7 +145,7 @@ var _ = Describe("1.1 registry users:", func() {
 			Expect(out).To(gbytes.Say(RegistryRef(ZOTHost, testRepo, "")))
 		})
 
-		It("should attach a file via a OCI Image", Focus, func() {
+		It("should attach a file via a OCI Image", func() {
 			testRepo := attachTestRepo("image")
 			tempDir := PrepareTempFiles()
 			subjectRef := RegistryRef(ZOTHost, testRepo, foobar.Tag)
