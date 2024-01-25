@@ -144,6 +144,21 @@ var _ = Describe("1.1 registry users:", func() {
 			Expect(out).To(gbytes.Say(RegistryRef(ZOTHost, testRepo, "")))
 		})
 
+		It("should attach a file to a subject twice", func() {
+			// prepare
+			testRepo := attachTestRepo("attach-twice")
+			tempDir := PrepareTempFiles()
+			subjectRef := RegistryRef(ZOTHost, testRepo, foobar.Tag)
+			CopyZOTRepo(ImageRepo, testRepo)
+			// test
+			ref1 := ORAS("attach", "--artifact-type", "test/attach", subjectRef, fmt.Sprintf("%s:%s", foobar.AttachFileName, foobar.AttachFileMedia), "--format", "{{.Ref}}").
+				WithWorkDir(tempDir).Exec().Out.Contents()
+			ref2 := ORAS("attach", "--artifact-type", "test/attach", subjectRef, fmt.Sprintf("%s:%s", foobar.AttachFileName, foobar.AttachFileMedia), "--format", "{{.Ref}}").
+				WithWorkDir(tempDir).Exec().Out.Contents()
+			// validate
+			ORAS("discover", subjectRef, "--format", "{{range .Manifests}}{{println .Ref}}{{end}}").MatchKeyWords(string(ref1), string(ref2)).Exec()
+		})
+
 		It("should attach a file via a OCI Image", func() {
 			testRepo := attachTestRepo("image")
 			tempDir := PrepareTempFiles()
