@@ -90,5 +90,12 @@ func ToDescriptor(name string, desc ocispec.Descriptor) Descriptor {
 		Data:            desc.Data,
 		ArtifactType:    desc.ArtifactType,
 	}
+	if desc.Platform != nil {
+		ret.Platform = &Platform{
+			Architecture: desc.Platform.Architecture,
+			OS:           desc.Platform.OS,
+			Variant:      desc.Platform.Variant,
+		}
+	}
 	return ret
 }
