@@ -92,8 +92,15 @@ var _ = Describe("1.1 registry users:", func() {
 	subjectRef := RegistryRef(ZOTHost, ArtifactRepo, foobar.Tag)
 	When("running discover command with json output", func() {
 		format := "json"
-		It("should discover direct referrers of a subject", func() {
+		It("should discover direct referrers of a subject with deprecation hint", func() {
 			bytes := ORAS("discover", subjectRef, "-o", format).MatchErrKeyWords(feature.Deprecated.Mark).Exec().Out.Contents()
+			var index ocispec.Index
+			Expect(json.Unmarshal(bytes, &index)).ShouldNot(HaveOccurred())
+			Expect(index.Manifests).To(HaveLen(1))
+			Expect(index.Manifests).Should(ContainElement(foobar.SBOMImageReferrer))
+		})
+		It("should discover direct referrers of a subject", func() {
+			bytes := ORAS("discover", subjectRef, "--format", format).Exec().Out.Contents()
 			var index ocispec.Index
 			Expect(json.Unmarshal(bytes, &index)).ShouldNot(HaveOccurred())
 			Expect(index.Manifests).To(HaveLen(1))
@@ -101,26 +108,24 @@ var _ = Describe("1.1 registry users:", func() {
 		})
 
 		It("should discover matched referrer when filtering", func() {
-			bytes := ORAS("discover", subjectRef, "-o", format, "--artifact-type", foobar.SBOMImageReferrer.ArtifactType).MatchErrKeyWords(feature.Deprecated.Mark).Exec().Out.Contents()
+			bytes := ORAS("discover", subjectRef, "--format", format, "--artifact-type", foobar.SBOMImageReferrer.ArtifactType).
+				Exec().Out.Contents()
 			var index ocispec.Index
 			Expect(json.Unmarshal(bytes, &index)).ShouldNot(HaveOccurred())
 			Expect(index.Manifests).To(HaveLen(1))
 			Expect(index.Manifests).Should(ContainElement(foobar.SBOMImageReferrer))
 		})
 
-		It("should discover matched no referrer", func() {
-			bytes := ORAS("discover", subjectRef, "-o", format, "--artifact-type", "???").MatchErrKeyWords(feature.Deprecated.Mark).Exec().Out.Contents()
+		It("should discover no matched referrer", func() {
+			bytes := ORAS("discover", subjectRef, "--format", format, "--artifact-type", "???").Exec().Out.Contents()
 			var index ocispec.Index
 			Expect(json.Unmarshal(bytes, &index)).ShouldNot(HaveOccurred())
 			Expect(index.Manifests).To(HaveLen(0))
 		})
 
 		It("should discover one referrer with matched platform", func() {
-			bytes := ORAS("discover", RegistryRef(ZOTHost, ArtifactRepo, multi_arch.Tag), "-o", format, "--platform", "linux/amd64").
-				MatchErrKeyWords(feature.Deprecated.Mark).
-				Exec().
-				Out.
-				Contents()
+			bytes := ORAS("discover", RegistryRef(ZOTHost, ArtifactRepo, multi_arch.Tag), "--format", format, "--platform", "linux/amd64").
+				Exec().Out.Contents()
 			var index ocispec.Index
 			Expect(json.Unmarshal(bytes, &index)).ShouldNot(HaveOccurred())
 			Expect(index.Manifests).To(HaveLen(1))
@@ -136,35 +141,47 @@ var _ = Describe("1.1 registry users:", func() {
 				Exec()
 		})
 		format := "tree"
-		It("should discover all referrers of a subject", func() {
+		It("should discover all referrers of a subject with deprecation hint", func() {
 			ORAS("discover", subjectRef, "-o", format).
 				MatchErrKeyWords(feature.Deprecated.Mark).
 				MatchKeyWords(append(discoverKeyWords(false, referrers...), RegistryRef(ZOTHost, ArtifactRepo, foobar.Digest))...).
 				Exec()
 		})
+		It("should discover all referrers of a subject", func() {
+			err := ORAS("discover", subjectRef, "--format", format).
+				MatchKeyWords(append(discoverKeyWords(false, referrers...), RegistryRef(ZOTHost, ArtifactRepo, foobar.Digest))...).
+				Exec().Err
+			Expect(err).NotTo(gbytes.Say(feature.Deprecated.Mark))
+		})
 
 		It("should discover all referrers of a subject via referrers API", func() {
-			ORAS("discover", subjectRef, "-o", format, "--distribution-spec", "v1.1-referrers-api").
-				MatchErrKeyWords(feature.Deprecated.Mark).
+			ORAS("discover", subjectRef, "--format", format, "--distribution-spec", "v1.1-referrers-api").
 				MatchKeyWords(append(discoverKeyWords(false, referrers...), RegistryRef(ZOTHost, ArtifactRepo, foobar.Digest))...).
 				Exec()
 		})
 
 		It("should discover all referrers of a subject with annotations", func() {
-			ORAS("discover", subjectRef, "-o", format, "-v").
-				MatchErrKeyWords(feature.Deprecated.Mark).
+			ORAS("discover", subjectRef, "--format", format, "-v").
 				MatchKeyWords(append(discoverKeyWords(true, referrers...), RegistryRef(ZOTHost, ArtifactRepo, foobar.Digest))...).
 				Exec()
 		})
 	})
 	When("running discover command with table output", func() {
 		format := "table"
-		It("should all referrers of a subject", func() {
+		It("should all referrers of a subject with deprecation hint", func() {
 			referrers := []ocispec.Descriptor{foobar.SBOMImageReferrer, foobar.SBOMImageReferrer}
 			ORAS("discover", subjectRef, "-o", format).
 				MatchErrKeyWords(feature.Deprecated.Mark).
 				MatchKeyWords(append(discoverKeyWords(false, referrers...), foobar.Digest)...).
 				Exec()
+		})
+		It("should all referrers of a subject", func() {
+			referrers := []ocispec.Descriptor{foobar.SBOMImageReferrer, foobar.SBOMImageReferrer}
+			err := ORAS("discover", subjectRef, "--format", format).
+				MatchErrKeyWords(feature.Deprecated.Mark).
+				MatchKeyWords(append(discoverKeyWords(false, referrers...), foobar.Digest)...).
+				Exec().Err
+			Expect(err).NotTo(gbytes.Say(feature.Deprecated.Mark))
 		})
 	})
 })
