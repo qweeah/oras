@@ -176,8 +176,8 @@ func fetchManifest(cmd *cobra.Command, opts *fetchOptions) (fetchErr error) {
 			}
 		}
 		if opts.outputPath != "" && opts.outputPath != "-" {
+			// save manifest content into the local file if the output path is provided
 			if err = os.WriteFile(opts.outputPath, content, 0666); err != nil {
-				// save manifest content into the local file if the output path is provided
 				return err
 			}
 		} else if opts.Template == "" {
