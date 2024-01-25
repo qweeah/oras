@@ -258,7 +258,7 @@ var _ = Describe("OCI image layout users:", func() {
 			ref := ORAS("attach", "--artifact-type", "test/attach", Flags.Layout, subjectRef, fmt.Sprintf("%s:%s", foobar.AttachFileName, foobar.AttachFileMedia), "--format", "{{.Ref}}").
 				WithWorkDir(root).Exec().Out.Contents()
 			// validate
-			out := ORAS("discover", subjectRef, "--format", "{{range .Manifests}}{{println .Ref}}{{end}}").Exec().Out
+			out := ORAS("discover", Flags.Layout, subjectRef, "--format", "{{range .Manifests}}{{println .Ref}}{{end}}").Exec().Out
 			Expect(out).To(gbytes.Say(string(ref)))
 		})
 	})
