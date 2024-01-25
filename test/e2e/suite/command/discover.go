@@ -183,7 +183,7 @@ var _ = Describe("1.1 registry users:", func() {
 			Expect(err).NotTo(gbytes.Say(feature.Deprecated.Mark))
 		})
 	})
-	When("running discover command with go-template output", Focus, func() {
+	When("running discover command with go-template output", func() {
 		It("should show referrers digest of a subject", func() {
 			ORAS("discover", subjectRef, "--format", "{{(first .Manifests).Ref}}").
 				MatchContent(RegistryRef(ZOTHost, ArtifactRepo, foobar.SBOMImageReferrer.Digest.String())).
