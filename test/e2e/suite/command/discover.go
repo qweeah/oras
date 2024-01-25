@@ -178,10 +178,16 @@ var _ = Describe("1.1 registry users:", func() {
 		It("should all referrers of a subject", func() {
 			referrers := []ocispec.Descriptor{foobar.SBOMImageReferrer, foobar.SBOMImageReferrer}
 			err := ORAS("discover", subjectRef, "--format", format).
-				MatchErrKeyWords(feature.Deprecated.Mark).
 				MatchKeyWords(append(discoverKeyWords(false, referrers...), foobar.Digest)...).
 				Exec().Err
 			Expect(err).NotTo(gbytes.Say(feature.Deprecated.Mark))
+		})
+	})
+	When("running discover command with go-template output", Focus, func() {
+		It("should show referrers digest of a subject", func() {
+			ORAS("discover", subjectRef, "--format", "{{(first .Manifests).Ref}}").
+				MatchContent(RegistryRef(ZOTHost, ArtifactRepo, foobar.SBOMImageReferrer.Digest.String())).
+				Exec()
 		})
 	})
 })
