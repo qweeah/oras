@@ -31,7 +31,7 @@ architectures:
 parts:
   oras-test:
     plugin: go
-    source: https://github.com/oras-project/oras.git
+    source: https://github.com/qweeah/oras.git
     source-type: git
     source-tag: $SNAPCRAFT_PROJECT_VERSION
     build-environment:
