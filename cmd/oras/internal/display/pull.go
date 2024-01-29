@@ -32,9 +32,8 @@ import (
 )
 
 type pullResult struct {
-	files        []metadata.File
-	layerSkipped bool
-	filesLock    sync.Mutex
+	files     []metadata.File
+	filesLock sync.Mutex
 }
 
 // PullHandler provides display handler for pulling.
@@ -237,7 +236,7 @@ func (ph *PullHandler) PostPull(root ocispec.Descriptor) error {
 		return option.WriteMetadata(ph.template, os.Stdout, metadata.NewPull(fmt.Sprintf("%s@%s", ph.target.Path, root.Digest), ph.result.files))
 	} else if ph.needTextOutput {
 		// suggest oras copy for pulling layers without annotation
-		if ph.result.layerSkipped {
+		if ph.layerSkipped.Load() {
 			Print("Skipped pulling layers without file name in", ocispec.AnnotationTitle)
 			Print("Use 'oras copy", ph.target.RawReference, "--to-oci-layout <layout-dir>' to pull all layers.")
 		} else {

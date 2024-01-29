@@ -19,7 +19,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
@@ -169,23 +168,4 @@ func doPull(ctx context.Context, src oras.ReadOnlyTarget, dst oras.GraphTarget, 
 	}
 	// Copy
 	return oras.Copy(ctx, src, po.Reference, dst, po.Reference, opts)
-}
-
-// generateContentKey generates a unique key for each content descriptor, using
-// its digest and name if applicable.
-func generateContentKey(desc ocispec.Descriptor) string {
-	return desc.Digest.String() + desc.Annotations[ocispec.AnnotationTitle]
-}
-
-func printOnce(printed *sync.Map, s ocispec.Descriptor, msg string, verbose bool, dst any) error {
-	if _, loaded := printed.LoadOrStore(generateContentKey(s), true); loaded {
-		return nil
-	}
-	if tracked, ok := dst.(track.GraphTarget); ok {
-		// TTY
-		return tracked.Prompt(s, msg)
-
-	}
-	// none TTY
-	return display.PrintStatus(s, msg, verbose)
 }
