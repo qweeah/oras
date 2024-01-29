@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
@@ -31,7 +30,6 @@ import (
 	"oras.land/oras/cmd/oras/internal/argument"
 	"oras.land/oras/cmd/oras/internal/display"
 	oerrors "oras.land/oras/cmd/oras/internal/errors"
-	"oras.land/oras/cmd/oras/internal/meta"
 	"oras.land/oras/cmd/oras/internal/option"
 	"oras.land/oras/internal/graph"
 	"oras.land/oras/internal/registryutil"
@@ -91,7 +89,6 @@ Example - Attach file to the manifest tagged 'v1' in an OCI image layout folder 
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			display.Set(opts.Template, opts.TTY)
 			return runAttach(cmd, &opts)
 		},
 	}
@@ -111,7 +108,13 @@ func runAttach(cmd *cobra.Command, opts *attachOptions) error {
 		return err
 	}
 	if len(opts.FileRefs) == 0 && len(annotations[option.AnnotationManifest]) == 0 {
-		return errors.New("no blob or manifest annotation are provided")
+		return &oerrors.Error{
+			Err:   errors.New(`neither file nor annotation provided in the command`),
+			Usage: fmt.Sprintf("%s %s", cmd.Parent().CommandPath(), cmd.Use),
+			Recommendation: `To attach to an existing artifact, please provide files 
+			via argument or annotations via flag "--annotation". Run "oras attach -h" 
+			for more options and examples`,
+		}
 	}
 
 	// prepare manifest
@@ -135,7 +138,8 @@ func runAttach(cmd *cobra.Command, opts *attachOptions) error {
 	if err != nil {
 		return err
 	}
-	descs, err := loadFiles(ctx, store, annotations, opts.FileRefs, opts.Verbose)
+	fh := display.NewFileHandler(opts.Template, opts.TTY, opts.Verbose)
+	descs, err := loadFiles(ctx, store, annotations, opts.FileRefs, fh)
 	if err != nil {
 		return err
 	}
@@ -147,7 +151,8 @@ func runAttach(cmd *cobra.Command, opts *attachOptions) error {
 	}
 	graphCopyOptions := oras.DefaultCopyGraphOptions
 	graphCopyOptions.Concurrency = opts.concurrency
-	updateDisplayOption(&graphCopyOptions, store, opts.Verbose, dst)
+	ph := display.NewPackHandler(opts.Template, opts.TTY, store, dst, opts.Verbose)
+	updateDisplayOption(&graphCopyOptions, ph)
 
 	packOpts := oras.PackManifestOptions{
 		Subject:             &subject,
@@ -181,16 +186,10 @@ func runAttach(cmd *cobra.Command, opts *attachOptions) error {
 	if err != nil {
 		return err
 	}
-	digest := subject.Digest.String()
-	if !strings.HasSuffix(opts.RawReference, digest) {
-		opts.RawReference = fmt.Sprintf("%s@%s", opts.Path, subject.Digest)
-	}
-	display.Print("Attached to", opts.AnnotatedReference())
-	display.Print("Digest:", root.Digest)
-
-	// Export manifest
-	if err = opts.ExportManifest(ctx, store, root); err != nil {
+	if err := ph.PostAttach(root, subject, &opts.Target, os.Stdout); err != nil {
 		return err
 	}
-	return option.WriteTo(os.Stdout, opts.Template, meta.NewPush(root, opts.Path))
+
+	// Export manifest
+	return opts.ExportManifest(ctx, store, root)
 }

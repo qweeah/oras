@@ -30,9 +30,8 @@ import (
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/registry"
 	"oras.land/oras/cmd/oras/internal/argument"
-	"oras.land/oras/cmd/oras/internal/display"
 	oerrors "oras.land/oras/cmd/oras/internal/errors"
-	"oras.land/oras/cmd/oras/internal/meta"
+	"oras.land/oras/cmd/oras/internal/metadata"
 	"oras.land/oras/cmd/oras/internal/option"
 	"oras.land/oras/internal/tree"
 )
@@ -93,7 +92,6 @@ Example - Discover referrers of the manifest tagged 'v1' in an OCI image layout 
 			return option.Parse(&opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			display.Set(opts.Template, opts.TTY)
 			return runDiscover(cmd, &opts)
 		},
 	}
@@ -138,7 +136,7 @@ func runDiscover(cmd *cobra.Command, opts *discoverOptions) error {
 		if err != nil {
 			return err
 		}
-		return option.WriteTo(os.Stdout, opts.Template, meta.NewDiscover(opts.Path, refs))
+		return option.WriteMetadata(opts.Template, os.Stdout, metadata.NewDiscover(opts.Path, refs))
 	}
 	fmt.Fprintf(os.Stderr, "[DEPRECATED] --output is deprecated, try `--format %s` instead\n", opts.outputType)
 	return output(ctx, opts.outputType, opts, desc, repo)
@@ -242,7 +240,7 @@ func printDiscoveredReferrersTable(refs []ocispec.Descriptor, verbose bool) erro
 // printDiscoveredReferrersJSON prints referrer list in JSON equivalent to the
 // image index: https://github.com/opencontainers/image-spec/blob/v1.1.0-rc2/image-index.md#image-index-property-descriptions
 func printDiscoveredReferrersJSON(path string, refs []ocispec.Descriptor) error {
-	return option.WriteTo(os.Stdout, "json", meta.NewDiscover(path, refs))
+	return option.WriteMetadata("json", os.Stdout, metadata.NewDiscover(path, refs))
 }
 
 func printJSON(object interface{}) error {

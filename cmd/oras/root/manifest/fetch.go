@@ -26,9 +26,8 @@ import (
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras/cmd/oras/internal/argument"
-	"oras.land/oras/cmd/oras/internal/display"
 	oerrors "oras.land/oras/cmd/oras/internal/errors"
-	"oras.land/oras/cmd/oras/internal/meta"
+	"oras.land/oras/cmd/oras/internal/metadata"
 	"oras.land/oras/cmd/oras/internal/option"
 	"oras.land/oras/internal/docker"
 )
@@ -97,7 +96,6 @@ Example - Fetch raw manifest from an OCI layout archive file 'layout.tar':
 		},
 		Aliases: []string{"get"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			display.Set(opts.Template, opts.TTY)
 			return fetchManifest(cmd, &opts)
 		},
 	}
@@ -167,7 +165,7 @@ func fetchManifest(cmd *cobra.Command, opts *fetchOptions) (fetchErr error) {
 						return err
 					}
 
-					if err = option.WriteTo(os.Stdout, opts.Template, meta.ToMappable(reflect.ValueOf(manifest))); err != nil {
+					if err = option.WriteMetadata(opts.Template, os.Stdout, metadata.ToMappable(reflect.ValueOf(manifest))); err != nil {
 						return err
 					}
 				default:

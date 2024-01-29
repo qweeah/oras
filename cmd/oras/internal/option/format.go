@@ -16,7 +16,6 @@ limitations under the License.
 package option
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
 	"text/template"
@@ -25,11 +24,12 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// Format is a flag to format metadata into output.
 type Format struct {
 	Template string
 }
 
-// ApplyFlag implements FlagProvider.ApplyFlag
+// ApplyFlag implements FlagProvider.ApplyFlag.
 func (opts *Format) ApplyFlags(fs *pflag.FlagSet) {
 	name := "format"
 	if fs.Lookup(name) != nil {
@@ -41,33 +41,20 @@ func (opts *Format) ApplyFlags(fs *pflag.FlagSet) {
 '$TEMPLATE':  Print output using the given Go template.`)
 }
 
-// WriteTo writes the data to the given writer using the given format.
-func WriteTo(w io.Writer, format string, data interface{}) error {
-	switch format {
-	case "":
-		return nil
+// WriteMetadata writes metadata to an io.Writer.
+func WriteMetadata(formatFlag string, w io.Writer, metadata any) error {
+	switch formatFlag {
 	case "json":
 		// output json
-		// write marshalled data
-		b, err := json.Marshal(data)
-		if err != nil {
-			return err
-		}
-		buf := bytes.NewBuffer(nil)
-		_ = json.Indent(buf, b, "", "  ")
-		_, err = w.Write(buf.Bytes())
-		if err != nil {
-			return err
-		}
+		encoder := json.NewEncoder(w)
+		encoder.SetIndent("", "  ")
+		return encoder.Encode(metadata)
 	default:
 		// go templating
-		var err error
-		t := template.New("out").Funcs(sprig.FuncMap())
-		t, err = t.Parse(format)
+		t, err := template.New("format output").Funcs(sprig.FuncMap()).Parse(formatFlag)
 		if err != nil {
 			return err
 		}
-		return t.Execute(w, data)
+		return t.Execute(w, metadata)
 	}
-	return nil
 }

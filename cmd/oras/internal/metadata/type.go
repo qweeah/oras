@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package meta
+package metadata
 
 import (
 	"github.com/opencontainers/go-digest"
@@ -25,14 +25,16 @@ type DigestReference struct {
 	Ref string
 }
 
-// ToDigestReference converts a name and digest to a digest reference.
-func ToDigestReference(name string, digest string) DigestReference {
+// NewDigestReference creates a new digest reference.
+func NewDigestReference(name string, digest string) DigestReference {
 	return DigestReference{
 		Ref: name + "@" + digest,
 	}
 }
 
 // Descriptor is a descriptor with digest reference.
+// We cannot use ocispec.Descriptor here since the first letter of the json
+// annotation key is not uppercase.
 type Descriptor struct {
 	DigestReference
 
@@ -51,52 +53,19 @@ type Descriptor struct {
 	// Annotations contains arbitrary metadata relating to the targeted content.
 	Annotations map[string]string `json:",omitempty"`
 
-	// Data is an embedding of the targeted content. This is encoded as a base64
-	// string when marshalled to JSON (automatically, by encoding/json). If
-	// present, Data can be used directly to avoid fetching the targeted content.
-	Data []byte `json:",omitempty"`
-
-	// Platform describes the platform which the image in the manifest runs on.
-	//
-	// This should only be used when referring to a manifest.
-	Platform *Platform `json:",omitempty"`
-
 	// ArtifactType is the IANA media type of this artifact.
 	ArtifactType string
 }
 
-// Platform describes the platform which the image in the manifest runs on.
-type Platform struct {
-	// Architecture field specifies the CPU architecture, for example
-	// `amd64` or `ppc64le`.
-	Architecture string
-
-	// OS specifies the operating system, for example `linux` or `windows`.
-	OS string
-
-	// Variant is an optional field specifying a variant of the CPU, for
-	// example `v7` to specify ARMv7 when architecture is `arm`.
-	Variant string
-}
-
-// ToDescriptor converts a descriptor to a descriptor with digest reference.
-func ToDescriptor(name string, desc ocispec.Descriptor) Descriptor {
-	ret := Descriptor{
-		DigestReference: ToDigestReference(name, desc.Digest.String()),
+// FromDescriptor converts a OCI descriptor to a descriptor with digest reference.
+func FromDescriptor(name string, desc ocispec.Descriptor) Descriptor {
+	return Descriptor{
+		DigestReference: NewDigestReference(name, desc.Digest.String()),
 		MediaType:       desc.MediaType,
 		Digest:          desc.Digest,
 		Size:            desc.Size,
 		URLs:            desc.URLs,
 		Annotations:     desc.Annotations,
-		Data:            desc.Data,
 		ArtifactType:    desc.ArtifactType,
 	}
-	if desc.Platform != nil {
-		ret.Platform = &Platform{
-			Architecture: desc.Platform.Architecture,
-			OS:           desc.Platform.OS,
-			Variant:      desc.Platform.Variant,
-		}
-	}
-	return ret
 }

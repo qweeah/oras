@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package meta
+package metadata
 
 import ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 
@@ -27,7 +27,7 @@ func NewDiscover(name string, descs []ocispec.Descriptor) discover {
 		Manifests: make([]Descriptor, 0),
 	}
 	for _, desc := range descs {
-		discover.Manifests = append(discover.Manifests, ToDescriptor(name, desc))
+		discover.Manifests = append(discover.Manifests, FromDescriptor(name, desc))
 	}
 	return discover
 }

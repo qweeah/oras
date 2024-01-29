@@ -28,22 +28,12 @@ import (
 	"oras.land/oras-go/v2/registry"
 )
 
-var (
-	printLock sync.Mutex
-	to        *os.File
-)
+var printLock sync.Mutex
 
-func init() {
-	to = os.Stdout
-}
-
-// Set sets the output writer for printing.
-func Set(template string, tty *os.File) {
-	printLock.Lock()
-	defer printLock.Unlock()
-	if template != "" || tty != nil {
-		to = nil
-	}
+// NeedTextOutput check if text status should be printed based on template
+// and tty.
+func NeedTextOutput(template string, tty *os.File) bool {
+	return template == "" && tty == nil
 }
 
 // PrintFunc is the function type returned by StatusPrinter.
@@ -53,11 +43,7 @@ type PrintFunc func(ocispec.Descriptor) error
 func Print(a ...any) error {
 	printLock.Lock()
 	defer printLock.Unlock()
-
-	if to == nil {
-		return nil
-	}
-	_, err := fmt.Fprintln(to, a...)
+	_, err := fmt.Println(a...)
 	return err
 }
 

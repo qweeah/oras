@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package meta
+package metadata
 
 import (
 	"fmt"
@@ -42,7 +42,7 @@ func NewFile(name string, outputDir string, desc ocispec.Descriptor, descPath st
 	}
 	return File{
 		Path:       path,
-		Descriptor: ToDescriptor(descPath, desc),
+		Descriptor: FromDescriptor(descPath, desc),
 	}
 }
 
