@@ -277,12 +277,13 @@ var _ = Describe("1.1 registry users:", func() {
 			src := RegistryRef(ZOTHost, ArtifactRepo, ma.Tag)
 			dstRepo := cpTestRepo("platform-referrers-no-tag")
 			dst := RegistryRef(ZOTHost, dstRepo, "")
+			digest := ma.LinuxAMD64.Digest.String()
 			ORAS("cp", src, dst, "-r", "--platform", "linux/amd64", "-v").
 				MatchStatus(stateKeys, true, len(stateKeys)).
-				MatchKeyWords("Digest: " + ma.LinuxAMD64.Digest.String()).
+				MatchKeyWords("Digest: " + digest).
 				Exec()
 			// validate
-			CompareRef(src, RegistryRef(ZOTHost, dstRepo, ma.LinuxAMD64.Digest.String()))
+			CompareRef(RegistryRef(ZOTHost, ArtifactRepo, digest), RegistryRef(ZOTHost, dstRepo, digest))
 			digests := ORAS("discover", dst, "--format", "{{range .Manifests}}{{println .Digest}}{{end}}").Exec().Out.Contents()
 			for _, digest := range strings.Split(strings.TrimSpace(string(digests)), "\n") {
 				CompareRef(RegistryRef(ZOTHost, ArtifactRepo, digest), RegistryRef(ZOTHost, dstRepo, digest))
