@@ -149,7 +149,7 @@ func runPull(cmd *cobra.Command, opts *pullOptions) error {
 	}
 	ph := display.NewPullHandler(opts.Template, opts.TTY, tracked, opts.Verbose, opts.IncludeSubject, configPath, configMediaType, opts.Output, &opts.Target)
 	copyOptions.FindSuccessors = ph.FindSuccessors
-	copyOptions.PreCopy = ph.PostCopy
+	copyOptions.PreCopy = ph.PreCopy
 	copyOptions.PostCopy = ph.PostCopy
 
 	root, err := doPull(ctx, src, tracked, copyOptions, opts)

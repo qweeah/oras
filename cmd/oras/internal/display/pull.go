@@ -175,7 +175,6 @@ func (ph *PullHandler) printOnce(s ocispec.Descriptor, msg string) error {
 	if ph.trackedGraphTarget != nil {
 		// TTY
 		return ph.trackedGraphTarget.Prompt(s, msg)
-
 	} else if ph.needTextOutput {
 		// none TTY
 		return PrintStatus(s, msg, ph.verbose)
@@ -225,23 +224,26 @@ func (ph *PullHandler) PostCopy(ctx context.Context, desc ocispec.Descriptor) er
 		name = desc.MediaType
 	}
 	ph.printed.Store(generateContentKey(desc), true)
-	if ph.trackedGraphTarget != nil {
+	if ph.needTextOutput {
 		// none TTY, print status log for downloaded
 		return Print(ph.promptDownloaded, ShortDigest(desc), name)
 	}
-	// TTY
 	return nil
 }
 
 // PostPull is called after pulling.
 func (ph *PullHandler) PostPull(root ocispec.Descriptor) error {
-	// suggest oras copy for pulling layers without annotation
-	if ph.result.layerSkipped {
-		Print("Skipped pulling layers without file name in", ocispec.AnnotationTitle)
-		Print("Use 'oras copy", ph.target.RawReference, "--to-oci-layout <layout-dir>' to pull all layers.")
-	} else {
-		Print("Pulled", ph.target.AnnotatedReference())
-		Print("Digest:", root.Digest)
+	if ph.template != "" {
+		return option.WriteMetadata(ph.template, os.Stdout, metadata.NewPull(fmt.Sprintf("%s@%s", ph.target.Path, root.Digest), ph.result.files))
+	} else if ph.needTextOutput {
+		// suggest oras copy for pulling layers without annotation
+		if ph.result.layerSkipped {
+			Print("Skipped pulling layers without file name in", ocispec.AnnotationTitle)
+			Print("Use 'oras copy", ph.target.RawReference, "--to-oci-layout <layout-dir>' to pull all layers.")
+		} else {
+			Print("Pulled", ph.target.AnnotatedReference())
+			Print("Digest:", root.Digest)
+		}
 	}
-	return option.WriteMetadata(ph.template, os.Stdout, metadata.NewPull(fmt.Sprintf("%s@%s", ph.target.Path, root.Digest), ph.result.files))
+	return nil
 }
