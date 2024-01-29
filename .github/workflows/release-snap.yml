@@ -34,6 +34,12 @@ jobs:
           if [[ "${VERSION}" == "${BRANCH_NAME}" ]]; then
             VERSION=$(git rev-parse --short HEAD)
           fi
+          PRERELEASE=${VERSION#*-rc}
+          if [[ -z "$PRERELEASE" || "$PRERELEASE" == "$VERSION" ]]; then
+            echo "release=stable" >> $GITHUB_OUTPUT
+          else
+            echo "release=candidate" >> $GITHUB_OUTPUT
+          fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
       - name: make snapcraft
         run: |
@@ -46,4 +52,5 @@ jobs:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
         with:
           snap: ${{ steps.build.outputs.snap }}
+          release: ${{ steps.version.outputs.release }}
 
