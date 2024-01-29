@@ -11,13 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: oras
+name: oras-test
 version: '{VERSION}'
 summary: Package for the ORAS CLI tool
 description: |
   A snap package for the ORAS CLI tool, which is used for managing OCI artifacts.
 base: core22
-confinement: classic
+confinement: strict
 grade: stable
 
 architectures:
@@ -29,7 +29,7 @@ architectures:
     build-for: s390x
 
 parts:
-  oras:
+  oras-test:
     plugin: go
     source: https://github.com/oras-project/oras.git
     source-type: git
@@ -53,7 +53,7 @@ parts:
   
 
 apps:
-  oras:
+  oras-test:
     command: bin/oras
     plugs:
       - home
