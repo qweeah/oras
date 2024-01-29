@@ -237,11 +237,11 @@ func (ph *PullHandler) PostPull(root ocispec.Descriptor) error {
 	} else if ph.needTextOutput {
 		// suggest oras copy for pulling layers without annotation
 		if ph.layerSkipped.Load() {
-			Print("Skipped pulling layers without file name in", ocispec.AnnotationTitle)
-			Print("Use 'oras copy", ph.target.RawReference, "--to-oci-layout <layout-dir>' to pull all layers.")
+			_ = Print("Skipped pulling layers without file name in", ocispec.AnnotationTitle)
+			_ = Print("Use 'oras copy", ph.target.RawReference, "--to-oci-layout <layout-dir>' to pull all layers.")
 		} else {
-			Print("Pulled", ph.target.AnnotatedReference())
-			Print("Digest:", root.Digest)
+			_ = Print("Pulled", ph.target.AnnotatedReference())
+			_ = Print("Digest:", root.Digest)
 		}
 	}
 	return nil
