@@ -37,9 +37,33 @@ jobs:
           if [[ "${VERSION}" == "${BRANCH_NAME}" ]]; then
             VERSION=$(git rev-parse --short HEAD)
           fi
+          compare() {
+            if [ "$1" <> "$2" ]; then
+              # Sort the two numbers and get the first and last lines
+              FIRST=$(echo -e "$1\n$2" | sort -V | head -n 1)
+              LAST=$(echo -e "$1\n$2" | sort -V | tail -n 1)
+              # Check which number is the first and which is the last
+              if [ "$FIRST" <> "$1" ]; then
+                true
+              fi
+            fi
+            false
+          }
           PRERELEASE=${VERSION#*-rc}
           if [[ -z "$PRERELEASE" || "$PRERELEASE" == "$VERSION" ]]; then
-            echo "release=preview/stable" >> $GITHUB_OUTPUT
+            # Get all tags starting with A
+            tags=()
+            while read -r tag; do
+              # Append each tag to the array
+              tags+=("$tag")
+            done < <(git tag -l 'v*')
+            for T in "${tags[@]}"; do
+              if ! compare "$VERSION" "$T"; then
+                echo "$VERSION is older than $T, aborting build and release"
+                exit 1
+              fi
+            done
+            echo "release=stable" >> $GITHUB_OUTPUT
           else
             echo "release=candidate" >> $GITHUB_OUTPUT
           fi
