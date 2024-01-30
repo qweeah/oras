@@ -54,12 +54,14 @@ jobs:
             # Get all tags starting with A
             tags=()
             while read -r tag; do
-              # Append each tag to the array
+            if [[ "$tag" == "$VERSION" ]]; then
+              continue
+            fi
               tags+=("$tag")
             done < <(git tag -l 'v*')
             for T in "${tags[@]}"; do
               if ! compare "$VERSION" "$T"; then
-                echo "$VERSION is older than $T, aborting build and release"
+                echo "$VERSION is not newer than $T, aborting build and release to latest"
                 exit 1
               fi
             done
