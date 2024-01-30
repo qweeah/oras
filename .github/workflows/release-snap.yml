@@ -51,6 +51,18 @@ jobs:
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
         with:
-          snap: 'oras-test_${{ steps.version.outputs.version }}_*.snap'
+          snap: 'oras-test_${{ steps.version.outputs.version }}_amd64.snap'
+          release: ${{ steps.version.outputs.release }}
+      - uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+        with:
+          snap: 'oras-test_${{ steps.version.outputs.version }}_arm64.snap'
+          release: ${{ steps.version.outputs.release }}
+      - uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+        with:
+          snap: 'oras-test_${{ steps.version.outputs.version }}_s390x.snap'
           release: ${{ steps.version.outputs.release }}
 
