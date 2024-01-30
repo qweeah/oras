@@ -48,18 +48,21 @@ jobs:
       - uses: snapcore/action-build@v1
         id: build
       - uses: snapcore/action-publish@v1
+        name: publish amd64
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
         with:
           snap: 'oras-test_${{ steps.version.outputs.version }}_amd64.snap'
           release: ${{ steps.version.outputs.release }}
       - uses: snapcore/action-publish@v1
+        name: publish arm64
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
         with:
           snap: 'oras-test_${{ steps.version.outputs.version }}_arm64.snap'
           release: ${{ steps.version.outputs.release }}
       - uses: snapcore/action-publish@v1
+        name: publish s390x
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
         with:
