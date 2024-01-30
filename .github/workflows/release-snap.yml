@@ -20,9 +20,6 @@ on:
 
 jobs:
   release-snap:
-    strategy:
-      matrix:
-        arch: [amd64,arm64,s390x]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -54,6 +51,6 @@ jobs:
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
         with:
-          snap: oras-test_${{ steps.version.outputs.version }}_${{ matrix.arch }}.snap
+          snap: 'oras-test_${{ steps.version.outputs.version }}_*.snap'
           release: ${{ steps.version.outputs.release }}
 
