@@ -44,6 +44,7 @@ jobs:
               LAST=$(echo -e "$1\n$2" | sort -V | tail -n 1)
               # Check which number is the first and which is the last
               if [ "$FIRST" <> "$1" ]; then
+                echo "$1 is newer than $2"
                 true
               fi
             fi
@@ -54,9 +55,9 @@ jobs:
             # Get all tags starting with A
             tags=()
             while read -r tag; do
-            if [[ "$tag" == "$VERSION" ]]; then
-              continue
-            fi
+              if [[ "$tag" == "$VERSION" ]]; then
+                continue
+              fi
               tags+=("$tag")
             done < <(git tag -l 'v*')
             for T in "${tags[@]}"; do
