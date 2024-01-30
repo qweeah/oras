@@ -39,7 +39,7 @@ jobs:
           fi
           PRERELEASE=${VERSION#*-rc}
           if [[ -z "$PRERELEASE" || "$PRERELEASE" == "$VERSION" ]]; then
-            echo "release=stable" >> $GITHUB_OUTPUT
+            echo "release=preview/stable" >> $GITHUB_OUTPUT
           else
             echo "release=candidate" >> $GITHUB_OUTPUT
           fi
