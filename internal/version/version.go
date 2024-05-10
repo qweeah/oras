@@ -17,9 +17,9 @@ package version
 
 var (
 	// Version is the current version of the oras.
-	Version = "1.2.0-beta.1"
+	Version = "1.2.0-rc.1"
 	// BuildMetadata is the extra build time data
-	BuildMetadata = "unreleased"
+	BuildMetadata = "test"
 	// GitCommit is the git sha1
 	GitCommit = ""
 	// GitTreeState is the state of the git tree
