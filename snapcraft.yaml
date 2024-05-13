@@ -17,7 +17,7 @@ summary: Package for the ORAS CLI tool
 description: |
   A snap package for the ORAS CLI tool, which is used for managing OCI artifacts.
 base: core22
-confinement: classic
+confinement: strict
 grade: stable
 
 architectures:
