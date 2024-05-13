@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: oras
+name: oras-test
 version: '{VERSION}'
 summary: Package for the ORAS CLI tool
 description: |
