@@ -27,7 +27,7 @@ import (
 	"oras.land/oras/internal/tree"
 )
 
-// discoverHandler handles json metadata output for discover events.
+// discoverHandler handles tree metadata output for discover events.
 type discoverHandler struct {
 	out     io.Writer
 	path    string

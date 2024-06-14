@@ -110,7 +110,7 @@ func NewPullHandler(out io.Writer, format option.Format, path string, tty *os.Fi
 }
 
 // NewDiscoverHandler returns status and metadata handlers for discover command.
-func NewDiscoverHandler(out io.Writer, format option.Format, path string, rawReference string, desc ocispec.Descriptor, verbose bool) (metadata.DiscoverHandler, error) {
+func NewDiscoverHandler(out io.Writer, format option.Format, path string, rawReference string, desc ocispec.Descriptor, verbose, forceRecursive bool) (metadata.DiscoverHandler, error) {
 	var handler metadata.DiscoverHandler
 	switch format.Type {
 	case option.FormatTypeTree.Name, "":
@@ -118,9 +118,9 @@ func NewDiscoverHandler(out io.Writer, format option.Format, path string, rawRef
 	case option.FormatTypeTable.Name:
 		handler = table.NewDiscoverHandler(out, rawReference, desc, verbose)
 	case option.FormatTypeJSON.Name:
-		handler = json.NewDiscoverHandler(out, desc, path)
+		handler = json.NewDiscoverHandler(out, path, desc, forceRecursive)
 	case option.FormatTypeGoTemplate.Name:
-		handler = template.NewDiscoverHandler(out, desc, path, format.Template)
+		handler = template.NewDiscoverHandler(out, path, desc, forceRecursive, format.Template)
 	default:
 		return nil, errors.UnsupportedFormatTypeError(format.Type)
 	}
