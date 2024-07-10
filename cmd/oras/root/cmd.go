@@ -41,6 +41,7 @@ func New() *cobra.Command {
 		blob.Cmd(),
 		manifest.Cmd(),
 		repo.Cmd(),
+		demoCmd(),
 	)
 	return cmd
 }
