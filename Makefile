@@ -18,6 +18,7 @@ GIT_COMMIT  = $(shell git rev-parse HEAD)
 GIT_TAG     = $(shell git describe --tags --abbrev=0 --exact-match 2>/dev/null)
 GIT_DIRTY   = $(shell test -n "`git status --porcelain`" && echo "dirty" || echo "clean")
 GO_EXE      = go
+PKG_LIST := $(shell $(GO_EXE) list ./... | grep -v '^oras.land/oras/internal/testutils' | paste -sd ',' -)
 
 TARGET_OBJS ?= checksums.txt darwin_amd64.tar.gz darwin_arm64.tar.gz linux_amd64.tar.gz linux_arm64.tar.gz linux_armv7.tar.gz linux_s390x.tar.gz linux_ppc64le.tar.gz linux_riscv64.tar.gz windows_amd64.zip freebsd_amd64.tar.gz
 
@@ -33,10 +34,7 @@ LDFLAGS += -X $(PROJECT_PKG)/internal/version.GitTreeState=${GIT_DIRTY}
 
 .PHONY: test
 test: tidy vendor check-encoding  ## tidy and run tests
-	$(GO_EXE) test -race -v -coverprofile=coverage-all.txt -covermode=atomic -coverpkg=$($(GO_EXE) list ./... | tr '\n' ',') ./...
-	grep -v internal/testutils coverage-all.txt >coverage.txt
-	rm -f coverage-all.txt
-
+	$(GO_EXE) test -race -v -coverprofile=coverage.txt -covermode=atomic -coverpkg=$(PKG_LIST) ./...
 .PHONY: teste2e
 teste2e:  ## run end to end tests
 	./test/e2e/scripts/e2e.sh $(shell git rev-parse --show-toplevel) --clean

@@ -17,6 +17,7 @@ on:
   push:
     branches:
       - main
+      - test-pkglist
       - release-*
   pull_request:
     branches:
