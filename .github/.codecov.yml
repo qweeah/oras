@@ -12,6 +12,7 @@
 # limitations under the License.
 
 coverage:
+  fixes: false
   status:
     project:
       default:
